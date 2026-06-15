@@ -2,6 +2,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from app.modules.audio.errors import AudioError
+from app.modules.export.errors import ExportError
 from app.modules.llm.errors import LlmError
 from app.modules.sessions.errors import SessionError
 from app.modules.transcription.errors import TranscriptionError
@@ -31,12 +32,15 @@ ERROR_STATUS_CODES: dict[str, int] = {
     "llm_job_already_running": 409,
     "llm_transcript_too_long": 400,
     "llm_error": 400,
+    "unsupported_export_format": 400,
+    "export_error": 400,
+    "export_no_transcript": 400,
 }
 
 
 async def domain_error_handler(
     _request: Request,
-    error: AudioError | TranscriptionError | SessionError | LlmError,
+    error: AudioError | TranscriptionError | SessionError | LlmError | ExportError,
 ) -> JSONResponse:
     status_code = ERROR_STATUS_CODES.get(error.code, 400)
     return JSONResponse(

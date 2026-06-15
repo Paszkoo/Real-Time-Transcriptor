@@ -2,6 +2,7 @@ import type { SessionDetail } from "@real-time-transcriptor/shared";
 import { useEffect, useRef, useState } from "react";
 
 import { SessionInsightsPanel } from "./SessionInsightsPanel";
+import { SessionExportPanel } from "./SessionExportPanel";
 import { type BackendConnection } from "../lib/backendApi";
 import { formatMsAsTimestamp } from "../lib/format";
 import { getSessionAudioUrl } from "../lib/sessionsApi";
@@ -81,6 +82,8 @@ export function SessionDetailView({
         connection={connection}
         onArtifactsUpdated={onArtifactsUpdated}
       />
+
+      <SessionExportPanel session={session} connection={connection} />
 
       <div className="mt-5 space-y-4">
         {session.segments.length === 0 ? (

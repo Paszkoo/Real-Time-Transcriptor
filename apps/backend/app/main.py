@@ -9,6 +9,7 @@ from app.constants import BACKEND_VERSION
 from app.db.engine import run_migrations
 from app.error_handlers import domain_error_handler
 from app.modules.audio.errors import AudioError
+from app.modules.export.errors import ExportError
 from app.modules.llm.errors import LlmError
 from app.modules.sessions.errors import SessionError
 from app.modules.settings.store import load_runtime_settings
@@ -38,6 +39,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(TranscriptionError, domain_error_handler)
     app.add_exception_handler(SessionError, domain_error_handler)
     app.add_exception_handler(LlmError, domain_error_handler)
+    app.add_exception_handler(ExportError, domain_error_handler)
 
     app.add_middleware(
         CORSMiddleware,

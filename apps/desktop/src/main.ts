@@ -1,6 +1,9 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import started from "electron-squirrel-startup";
+import fs from "node:fs/promises";
 import path from "node:path";
+
+import type { SaveExportFileRequest } from "./electron-api.types";
 
 import {
   ensureBackendRunning,
@@ -100,6 +103,20 @@ app.whenReady().then(async () => {
   ipcMain.handle("get-backend-port", () => getBackendPort());
   ipcMain.handle("get-backend-host", () => getHealthCheckHost());
   ipcMain.handle("get-setup-state", () => getSetupSnapshot());
+  ipcMain.handle("save-export-file", async (_event, request: SaveExportFileRequest) => {
+    const window = BrowserWindow.getFocusedWindow() ?? mainWindow;
+    const result = await dialog.showSaveDialog(window ?? undefined, {
+      defaultPath: request.defaultPath,
+      filters: request.filters,
+    });
+
+    if (result.canceled || !result.filePath) {
+      return { canceled: true };
+    }
+
+    await fs.writeFile(result.filePath, Buffer.from(request.data));
+    return { canceled: false, filePath: result.filePath };
+  });
 
   initializeSetupSnapshot(resolveBackendDir(), shouldRunModelSetupOnStart());
   startBackend();

@@ -32,6 +32,55 @@ export function getWebSocketUrl(connection: BackendConnection, path: string): st
   return `${wsBase}${path}`;
 }
 
+const NETWORK_ERROR: ApiErrorResponse = {
+  code: "network_error",
+  message: "Could not reach the backend.",
+};
+
+async function readBackendError(response: Response, fallbackMessage: string): Promise<ApiErrorResponse> {
+  try {
+    const error = (await response.json()) as ApiErrorResponse;
+    if (error.code && error.message) {
+      return error;
+    }
+  } catch {
+    // Fall through to generic error.
+  }
+
+  return {
+    code: "request_failed",
+    message: fallbackMessage,
+  };
+}
+
+export async function fetchBackendArrayBuffer(
+  connection: BackendConnection,
+  path: string,
+  init?: RequestInit,
+): Promise<
+  | { ok: true; data: ArrayBuffer; contentDisposition: string | null }
+  | { ok: false; error: ApiErrorResponse }
+> {
+  try {
+    const response = await fetch(`${getBackendBaseUrl(connection)}${path}`, init);
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: await readBackendError(response, `Request failed with status ${response.status}.`),
+      };
+    }
+
+    return {
+      ok: true,
+      data: await response.arrayBuffer(),
+      contentDisposition: response.headers.get("Content-Disposition"),
+    };
+  } catch {
+    return { ok: false, error: NETWORK_ERROR };
+  }
+}
+
 export async function fetchBackendJson<T>(
   connection: BackendConnection,
   path: string,
@@ -53,30 +102,12 @@ export async function fetchBackendJson<T>(
       return { ok: true, data: (await response.json()) as T };
     }
 
-    try {
-      const error = (await response.json()) as ApiErrorResponse;
-      if (error.code && error.message) {
-        return { ok: false, error };
-      }
-    } catch {
-      // Fall through to generic error.
-    }
-
     return {
       ok: false,
-      error: {
-        code: "request_failed",
-        message: `Request failed with status ${response.status}.`,
-      },
+      error: await readBackendError(response, `Request failed with status ${response.status}.`),
     };
   } catch {
-    return {
-      ok: false,
-      error: {
-        code: "network_error",
-        message: "Could not reach the backend.",
-      },
-    };
+    return { ok: false, error: NETWORK_ERROR };
   }
 }
 

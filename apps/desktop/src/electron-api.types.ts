@@ -24,6 +24,22 @@ export interface BackendStatusEvent {
   status: "restarting" | "stopped";
 }
 
+export interface SaveExportFileFilter {
+  name: string;
+  extensions: string[];
+}
+
+export interface SaveExportFileRequest {
+  defaultPath: string;
+  filters: SaveExportFileFilter[];
+  data: ArrayBuffer;
+}
+
+export interface SaveExportFileResult {
+  canceled: boolean;
+  filePath?: string;
+}
+
 export interface ElectronAPI {
   getBackendPort: () => Promise<number>;
   getBackendHost: () => Promise<string>;
@@ -33,4 +49,5 @@ export interface ElectronAPI {
   onSetupComplete: (callback: () => void) => () => void;
   onSetupError: (callback: (event: SetupErrorEvent) => void) => () => void;
   onBackendStatus: (callback: (event: BackendStatusEvent) => void) => () => void;
+  saveExportFile: (request: SaveExportFileRequest) => Promise<SaveExportFileResult>;
 }

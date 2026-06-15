@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 
-import type { ElectronAPI } from "./electron-api.types";
+import type { ElectronAPI, SaveExportFileRequest } from "./electron-api.types";
 
 function subscribe(channel: string, callback: () => void): () => void {
   const listener = () => callback();
@@ -28,6 +28,8 @@ const electronAPI: ElectronAPI = {
   onSetupComplete: (callback) => subscribe("setup:complete", callback),
   onSetupError: (callback) => subscribePayload("setup:error", callback),
   onBackendStatus: (callback) => subscribePayload("backend:status", callback),
+  saveExportFile: (request: SaveExportFileRequest) =>
+    ipcRenderer.invoke("save-export-file", request),
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);

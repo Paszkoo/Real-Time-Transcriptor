@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from rtt_shared.sessions import (
     SegmentResponse,
     SessionArtifactResponse,
@@ -16,7 +16,10 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.db.engine import get_db
 from app.db.models import SessionRow
+from app.modules.export.http import build_content_disposition
+from app.modules.export.service import export_service
 from app.modules.llm.service import llm_service
+from app.modules.sessions.mapping import sorted_session_parts
 from app.modules.sessions.service import session_service
 from app.modules.sessions.transcript_stream import transcript_stream_manager
 
@@ -45,9 +48,7 @@ def _to_list_response(session_rows: list[SessionRow]) -> SessionsListResponse:
 
 
 def _to_detail(session_row: SessionRow, db: Session) -> SessionDetailResponse:
-    speakers = sorted(session_row.speakers, key=lambda speaker: speaker.sort_order)
-    speaker_labels = {speaker.id: speaker.label for speaker in speakers}
-    segments = sorted(session_row.segments, key=lambda segment: segment.sequence)
+    speakers, speaker_labels, segments = sorted_session_parts(session_row)
     artifacts = llm_service.list_artifacts(db, session_row.id)
 
     return SessionDetailResponse(
@@ -129,6 +130,20 @@ async def update_speaker_label(
 @router.delete("/sessions/{session_id}", status_code=204)
 def delete_session(session_id: str, db: Session = Depends(get_db)) -> None:
     session_service.delete_session(db, session_id)
+
+
+@router.get("/sessions/{session_id}/export")
+def export_session(
+    session_id: str,
+    format: str = Query(..., min_length=1),
+    db: Session = Depends(get_db),
+) -> Response:
+    result = export_service.export(db, session_id, format)
+    return Response(
+        content=result.content,
+        media_type=result.media_type,
+        headers={"Content-Disposition": build_content_disposition(result.filename)},
+    )
 
 
 @router.get("/sessions/{session_id}/audio")
