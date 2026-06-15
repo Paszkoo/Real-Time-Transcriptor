@@ -1,3 +1,5 @@
+import { AudioCapturePanel } from "./components/AudioCapturePanel";
+import { useAudioCapture } from "./hooks/useAudioCapture";
 import { useBackendHealth, type BackendStatus } from "./hooks/useBackendHealth";
 import { useSetupState } from "./hooks/useSetupState";
 
@@ -18,6 +20,7 @@ const STATUS_COLOR: Record<BackendStatus, string> = {
 export function App() {
   const { status, health } = useBackendHealth();
   const setupUi = useSetupState();
+  const audioCapture = useAudioCapture(status === "online");
 
   const isPulsing = status === "checking" || status === "restarting";
 
@@ -63,6 +66,8 @@ export function App() {
       {setupUi.status === "skipped" && setupUi.hint ? (
         <p className="max-w-lg text-center text-xs text-slate-500">{setupUi.hint}</p>
       ) : null}
+
+      <AudioCapturePanel backendOnline={status === "online"} capture={audioCapture} />
     </main>
   );
 }

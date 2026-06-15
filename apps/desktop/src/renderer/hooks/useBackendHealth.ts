@@ -1,32 +1,18 @@
 import {
-  DEFAULT_BACKEND_PORT,
   HEALTH_POLL_INTERVAL_MS,
   type HealthResponse,
 } from "@real-time-transcriptor/shared";
 import { useEffect, useState } from "react";
 
+import { getBackendBaseUrl, resolveBackendConnection } from "../lib/backendApi";
+
 export type BackendStatus = "checking" | "online" | "offline" | "restarting";
 
-interface BackendConnection {
-  host: string;
-  port: number;
-}
-
-async function resolveBackendConnection(): Promise<BackendConnection> {
-  const api = window.electronAPI;
-  if (!api) {
-    return { host: "127.0.0.1", port: DEFAULT_BACKEND_PORT };
-  }
-
-  const [host, port] = await Promise.all([api.getBackendHost(), api.getBackendPort()]);
-  return { host, port };
-}
-
-async function fetchHealth(connection: BackendConnection): Promise<HealthResponse | null> {
+async function fetchHealth(
+  connection: Awaited<ReturnType<typeof resolveBackendConnection>>,
+): Promise<HealthResponse | null> {
   try {
-    const response = await fetch(
-      `http://${connection.host}:${connection.port}/api/health`,
-    );
+    const response = await fetch(`${getBackendBaseUrl(connection)}/api/health`);
     if (!response.ok) {
       return null;
     }

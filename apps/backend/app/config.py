@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     ollama_host: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen3:4b"
     device: str = "cpu"
+    audio_sample_rate: int = 16000
+    audio_chunk_duration_s: float = 30.0
+    audio_chunk_overlap_s: float = 5.0
+    vad_enabled: bool = False
+    vad_threshold: float = 0.5
+    ffmpeg_path: str = "ffmpeg"
+    audio_chunk_queue_maxsize: int = 32
+    audio_file_roots: str = ""
 
 
 settings = Settings()
