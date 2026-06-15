@@ -1,7 +1,4 @@
-import {
-  HEALTH_POLL_INTERVAL_MS,
-  type HealthResponse,
-} from "@real-time-transcriptor/shared";
+import { HEALTH_POLL_INTERVAL_MS, type HealthResponse } from "@real-time-transcriptor/shared";
 import { useEffect, useState } from "react";
 
 import { getBackendBaseUrl, resolveBackendConnection } from "../lib/backendApi";

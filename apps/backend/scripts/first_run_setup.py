@@ -13,6 +13,8 @@ from tqdm import tqdm
 
 from app.config import resolve_whisper_model_dir, settings
 from app.modules.llm.client import is_ollama_model_available
+from app.modules.settings.runtime import runtime_settings
+from app.modules.settings.store import load_runtime_settings
 from app.modules.transcription.errors import TranscriptionError
 
 SETUP_MARKER = resolve_whisper_model_dir() / ".setup-complete"
@@ -67,14 +69,14 @@ def ensure_ollama_running() -> dict:
 
 
 def pull_ollama_model(tags: dict) -> None:
-    print_step(f"Ensuring Ollama model '{settings.ollama_model}' is available")
-    if is_ollama_model_available(settings.ollama_model, tags):
-        print(f"Model '{settings.ollama_model}' already present.")
+    print_step(f"Ensuring Ollama model '{runtime_settings.ollama_model}' is available")
+    if is_ollama_model_available(runtime_settings.ollama_model, tags):
+        print(f"Model '{runtime_settings.ollama_model}' already present.")
         return
 
-    print(f"Pulling '{settings.ollama_model}' (this may take a while)…")
+    print(f"Pulling '{runtime_settings.ollama_model}' (this may take a while)…")
     pull = subprocess.Popen(
-        ["ollama", "pull", settings.ollama_model],
+        ["ollama", "pull", runtime_settings.ollama_model],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -96,11 +98,11 @@ def pull_ollama_model(tags: dict) -> None:
             progress.update(100 - last_value)
 
     if pull.wait() != 0:
-        fail(f"Failed to pull Ollama model '{settings.ollama_model}'.")
+        fail(f"Failed to pull Ollama model '{runtime_settings.ollama_model}'.")
 
 
 def download_whisper_model() -> None:
-    print_step(f"Ensuring Whisper model '{settings.whisper_model_name}' is cached")
+    print_step(f"Ensuring Whisper model '{runtime_settings.whisper_model_name}' is cached")
     model_dir = resolve_whisper_model_dir()
     model_dir.mkdir(parents=True, exist_ok=True)
 
@@ -126,6 +128,7 @@ def main() -> None:
         return
 
     print("Real-Time Transcriptor — first-run model setup")
+    load_runtime_settings()
     ensure_ollama_installed()
     tags = ensure_ollama_running()
     pull_ollama_model(tags)

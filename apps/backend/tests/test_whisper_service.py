@@ -133,7 +133,7 @@ def test_resolve_device_and_compute_type(
     expected_device: str,
     expected_compute_type: str,
 ) -> None:
-    monkeypatch.setattr("app.config.settings.device", device_setting)
+    monkeypatch.setattr("app.modules.settings.runtime.runtime_settings.device", device_setting)
 
     assert _resolve_device() == expected_device
     assert _resolve_compute_type(expected_device) == expected_compute_type

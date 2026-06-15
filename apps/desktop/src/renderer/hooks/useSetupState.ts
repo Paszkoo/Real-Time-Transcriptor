@@ -35,9 +35,7 @@ export function useSetupState(): SetupUiState {
       api.onSetupProgress((event) => setSetupUi(setupUiFromProgress(event))),
       api.onSetupComplete(() => setSetupUi(setupUiFromComplete())),
       api.onSetupError((event) =>
-        setSetupUi((current) =>
-          setupUiFromError(event.message, current.progress.percent),
-        ),
+        setSetupUi((current) => setupUiFromError(event.message, current.progress.percent)),
       ),
     ];
 

@@ -62,11 +62,3 @@ class SessionDetailResponse(SessionSummaryResponse):
 class SessionsListResponse(BaseModel):
     sessions: list[SessionSummaryResponse]
     limit: int
-
-
-class AppSettingsResponse(BaseModel):
-    save_session_audio: bool
-
-
-class AppSettingsUpdateRequest(BaseModel):
-    save_session_audio: bool | None = None

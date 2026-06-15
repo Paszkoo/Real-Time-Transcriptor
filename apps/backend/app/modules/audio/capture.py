@@ -19,6 +19,7 @@ from app.modules.audio.file_source import FileAudioSource
 from app.modules.audio.microphone import MicrophoneAudioSource
 from app.modules.audio.source import AudioDeviceInfo, AudioSource
 from app.modules.audio.vad import VadGate, create_vad_gate
+from app.modules.settings.runtime import runtime_settings
 
 logger = logging.getLogger(__name__)
 
@@ -51,13 +52,21 @@ class CaptureService:
         self._source_type: CaptureSourceType = "microphone"
 
     def list_devices(self) -> list[AudioDeviceInfo]:
-        return MicrophoneAudioSource().list_devices()
+        return MicrophoneAudioSource(sample_rate=runtime_settings.audio_sample_rate).list_devices()
+
+    def is_capturing(self) -> bool:
+        return self._running
 
     async def start(self, device_id: int) -> CaptureStatusResponse:
-        return await self._start_source(MicrophoneAudioSource(), device_id=device_id)
+        return await self._start_source(
+            MicrophoneAudioSource(sample_rate=runtime_settings.audio_sample_rate),
+            device_id=device_id,
+        )
 
     async def start_file(self, file_path: str) -> CaptureStatusResponse:
-        return await self._start_source(FileAudioSource(file_path))
+        return await self._start_source(
+            FileAudioSource(file_path, sample_rate=runtime_settings.audio_sample_rate),
+        )
 
     async def _start_source(
         self,
@@ -72,11 +81,15 @@ class CaptureService:
             self._source = source
             self._source_type = "file" if isinstance(source, FileAudioSource) else "microphone"
             self._chunker = AudioChunker(
-                chunk_duration_s=settings.audio_chunk_duration_s,
-                overlap_duration_s=settings.audio_chunk_overlap_s,
-                sample_rate=settings.audio_sample_rate,
+                chunk_duration_s=runtime_settings.audio_chunk_duration_s,
+                overlap_duration_s=runtime_settings.audio_chunk_overlap_s,
+                sample_rate=runtime_settings.audio_sample_rate,
             )
-            self._vad_gate = create_vad_gate()
+            self._vad_gate = create_vad_gate(
+                enabled=runtime_settings.vad_enabled,
+                threshold=runtime_settings.vad_threshold,
+                sample_rate=runtime_settings.audio_sample_rate,
+            )
             self._chunks_emitted = 0
             self._chunks_filtered = 0
             self._audio_level = 0.0
@@ -207,7 +220,7 @@ class CaptureService:
             self._chunks_filtered += 1
 
     def _chunk_passes_vad(self, chunk: np.ndarray) -> bool:
-        if not settings.vad_enabled or self._vad_gate is None:
+        if not runtime_settings.vad_enabled or self._vad_gate is None:
             return True
 
         return self._vad_gate.filter(chunk).size > 0
@@ -216,7 +229,7 @@ class CaptureService:
         peak = float(np.max(np.abs(samples))) if samples.size else 0.0
         self._audio_level = min(1.0, peak)
 
-        if not settings.vad_enabled or self._vad_gate is None:
+        if not runtime_settings.vad_enabled or self._vad_gate is None:
             self._vad_active = peak > 0.01
             return
 
@@ -224,7 +237,7 @@ class CaptureService:
 
     async def _emit_chunk(self, chunk: np.ndarray) -> None:
         self._chunks_emitted += 1
-        duration_s = chunk.size / settings.audio_sample_rate
+        duration_s = chunk.size / runtime_settings.audio_sample_rate
         peak = float(np.max(np.abs(chunk))) if chunk.size else 0.0
         logger.info(
             "Audio chunk #%s: %s samples (%.2fs), peak=%.4f",

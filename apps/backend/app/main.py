@@ -12,6 +12,7 @@ from app.modules.audio.errors import AudioError
 from app.modules.export.errors import ExportError
 from app.modules.llm.errors import LlmError
 from app.modules.sessions.errors import SessionError
+from app.modules.settings.errors import SettingsError
 from app.modules.settings.store import load_runtime_settings
 from app.modules.transcription.errors import TranscriptionError
 from app.routes.audio import router as audio_router
@@ -40,6 +41,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(SessionError, domain_error_handler)
     app.add_exception_handler(LlmError, domain_error_handler)
     app.add_exception_handler(ExportError, domain_error_handler)
+    app.add_exception_handler(SettingsError, domain_error_handler)
 
     app.add_middleware(
         CORSMiddleware,

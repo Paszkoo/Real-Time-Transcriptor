@@ -11,13 +11,13 @@ from tests.mock_source import MockAudioSource
 
 @pytest.fixture
 def capture_settings(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("app.modules.audio.capture.settings.audio_chunk_duration_s", 0.2)
-    monkeypatch.setattr("app.modules.audio.capture.settings.audio_chunk_overlap_s", 0.05)
-    monkeypatch.setattr("app.modules.audio.capture.settings.audio_sample_rate", 16000)
-    monkeypatch.setattr("app.modules.audio.capture.settings.vad_enabled", False)
+    monkeypatch.setattr("app.modules.audio.capture.runtime_settings.audio_chunk_duration_s", 0.2)
+    monkeypatch.setattr("app.modules.audio.capture.runtime_settings.audio_chunk_overlap_s", 0.05)
+    monkeypatch.setattr("app.modules.audio.capture.runtime_settings.audio_sample_rate", 16000)
+    monkeypatch.setattr("app.modules.audio.capture.runtime_settings.vad_enabled", False)
     monkeypatch.setattr(
         "app.modules.audio.capture.create_vad_gate",
-        lambda: PassthroughVadGate(),
+        lambda **_: PassthroughVadGate(),
     )
 
 

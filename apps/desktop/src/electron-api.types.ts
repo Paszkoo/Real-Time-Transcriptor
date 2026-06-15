@@ -1,3 +1,21 @@
+import type { DesktopSettings, DesktopSettingsUpdateRequest } from "@real-time-transcriptor/shared";
+
+export interface SaveExportFileFilter {
+  name: string;
+  extensions: string[];
+}
+
+export interface SaveExportFileRequest {
+  defaultPath: string;
+  filters: SaveExportFileFilter[];
+  data: ArrayBuffer;
+}
+
+export interface SaveExportFileResult {
+  canceled: boolean;
+  filePath?: string;
+}
+
 export interface SetupProgressEvent {
   message: string;
   percent: number;
@@ -24,22 +42,6 @@ export interface BackendStatusEvent {
   status: "restarting" | "stopped";
 }
 
-export interface SaveExportFileFilter {
-  name: string;
-  extensions: string[];
-}
-
-export interface SaveExportFileRequest {
-  defaultPath: string;
-  filters: SaveExportFileFilter[];
-  data: ArrayBuffer;
-}
-
-export interface SaveExportFileResult {
-  canceled: boolean;
-  filePath?: string;
-}
-
 export interface ElectronAPI {
   getBackendPort: () => Promise<number>;
   getBackendHost: () => Promise<string>;
@@ -50,4 +52,7 @@ export interface ElectronAPI {
   onSetupError: (callback: (event: SetupErrorEvent) => void) => () => void;
   onBackendStatus: (callback: (event: BackendStatusEvent) => void) => () => void;
   saveExportFile: (request: SaveExportFileRequest) => Promise<SaveExportFileResult>;
+  getDesktopSettings: () => Promise<DesktopSettings>;
+  patchDesktopSettings: (update: DesktopSettingsUpdateRequest) => Promise<DesktopSettings>;
+  getAppVersion: () => Promise<string>;
 }

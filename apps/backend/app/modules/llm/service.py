@@ -83,9 +83,7 @@ class LlmJobManager:
         with Session(engine) as db:
             session_row = session_service.get_by_id(db, session_id)
             if session_row.status != "closed":
-                raise SessionNotClosedError(
-                    "LLM processing is only available for closed sessions."
-                )
+                raise SessionNotClosedError("LLM processing is only available for closed sessions.")
             if not session_row.segments:
                 raise LlmError("Session has no transcript segments to process.")
 

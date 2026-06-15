@@ -5,11 +5,7 @@ import {
   type SummaryFormat,
 } from "@real-time-transcriptor/shared";
 
-import {
-  fetchBackendJson,
-  getWebSocketUrl,
-  type BackendConnection,
-} from "./backendApi";
+import { fetchBackendJson, getWebSocketUrl, type BackendConnection } from "./backendApi";
 
 export type LlmStreamEvent =
   | { type: "token"; content: string }

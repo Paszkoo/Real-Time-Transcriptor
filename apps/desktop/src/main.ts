@@ -3,7 +3,9 @@ import started from "electron-squirrel-startup";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import type { SaveExportFileRequest } from "./electron-api.types";
+import type { DesktopSettingsUpdateRequest, SaveExportFileRequest } from "./electron-api.types";
+
+import { getDesktopSettings, patchDesktopSettings } from "./settings-store";
 
 import {
   ensureBackendRunning,
@@ -20,11 +22,7 @@ import {
   shouldRunModelSetupOnStart,
 } from "./env";
 import { runModelSetup } from "./setup-runner";
-import {
-  getSetupSnapshot,
-  initializeSetupSnapshot,
-  setSetupSnapshot,
-} from "./setup-state";
+import { getSetupSnapshot, initializeSetupSnapshot, setSetupSnapshot } from "./setup-state";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -48,9 +46,7 @@ function createWindow(): BrowserWindow {
       window.webContents.openDevTools({ mode: "detach" });
     }
   } else {
-    window.loadFile(
-      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
-    );
+    window.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
 
   window.on("closed", () => {
@@ -80,11 +76,7 @@ async function maybeRunFirstLaunchSetup(window: BrowserWindow): Promise<void> {
   window.webContents.send("setup:start");
 
   try {
-    await runModelSetup(
-      resolveBackendDir(),
-      resolvePythonExecutable(),
-      window,
-    );
+    await runModelSetup(resolveBackendDir(), resolvePythonExecutable(), window);
     setSetupSnapshot({ status: "complete" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Model setup failed";
@@ -103,6 +95,11 @@ app.whenReady().then(async () => {
   ipcMain.handle("get-backend-port", () => getBackendPort());
   ipcMain.handle("get-backend-host", () => getHealthCheckHost());
   ipcMain.handle("get-setup-state", () => getSetupSnapshot());
+  ipcMain.handle("get-desktop-settings", () => getDesktopSettings());
+  ipcMain.handle("patch-desktop-settings", (_event, update: DesktopSettingsUpdateRequest) =>
+    patchDesktopSettings(update),
+  );
+  ipcMain.handle("get-app-version", () => app.getVersion());
   ipcMain.handle("save-export-file", async (_event, request: SaveExportFileRequest) => {
     const window = BrowserWindow.getFocusedWindow() ?? mainWindow;
     const result = await dialog.showSaveDialog(window ?? undefined, {

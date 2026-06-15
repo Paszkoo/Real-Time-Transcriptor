@@ -1,8 +1,8 @@
-import type { AppSettings } from "@real-time-transcriptor/shared";
+import type { AppSettings, AppSettingsUpdateRequest } from "@real-time-transcriptor/shared";
 import { useCallback, useEffect, useState } from "react";
 
 import { resolveBackendConnection } from "../lib/backendApi";
-import { fetchSettings, updateSettings } from "../lib/sessionsApi";
+import { fetchSettings, updateSettings } from "../lib/settingsApi";
 
 export function useAppSettings(backendOnline: boolean) {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -30,12 +30,12 @@ export function useAppSettings(backendOnline: boolean) {
     void refreshSettings();
   }, [refreshSettings]);
 
-  const setSaveSessionAudio = useCallback(async (enabled: boolean) => {
+  const patchSettings = useCallback(async (body: AppSettingsUpdateRequest) => {
     setIsSaving(true);
     setError(null);
 
     const connection = await resolveBackendConnection();
-    const result = await updateSettings(connection, { save_session_audio: enabled });
+    const result = await updateSettings(connection, body);
 
     setIsSaving(false);
 
@@ -52,7 +52,7 @@ export function useAppSettings(backendOnline: boolean) {
     settings,
     isSaving,
     error,
-    setSaveSessionAudio,
+    patchSettings,
     refreshSettings,
   };
 }

@@ -37,7 +37,10 @@ const NETWORK_ERROR: ApiErrorResponse = {
   message: "Could not reach the backend.",
 };
 
-async function readBackendError(response: Response, fallbackMessage: string): Promise<ApiErrorResponse> {
+async function readBackendError(
+  response: Response,
+  fallbackMessage: string,
+): Promise<ApiErrorResponse> {
   try {
     const error = (await response.json()) as ApiErrorResponse;
     if (error.code && error.message) {

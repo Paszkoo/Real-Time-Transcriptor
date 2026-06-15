@@ -20,14 +20,14 @@ class PassthroughVadGate:
 
 
 class SileroVadGate:
-    def __init__(self, threshold: float) -> None:
+    def __init__(self, threshold: float, sample_rate: int) -> None:
         import torch
         from silero_vad import load_silero_vad
 
         self._torch = torch
         self._threshold = threshold
         self._model = load_silero_vad()
-        self._sample_rate = settings.audio_sample_rate
+        self._sample_rate = sample_rate
 
     def filter(self, samples: np.ndarray) -> np.ndarray:
         flat = np.asarray(samples, dtype=np.float32).reshape(-1)
@@ -53,14 +53,23 @@ class SileroVadGate:
         return np.concatenate(kept)
 
 
-def create_vad_gate() -> VadGate:
-    if not settings.vad_enabled:
+def create_vad_gate(
+    *,
+    enabled: bool | None = None,
+    threshold: float | None = None,
+    sample_rate: int | None = None,
+) -> VadGate:
+    vad_enabled = settings.vad_enabled if enabled is None else enabled
+    vad_threshold = settings.vad_threshold if threshold is None else threshold
+    vad_sample_rate = settings.audio_sample_rate if sample_rate is None else sample_rate
+
+    if not vad_enabled:
         logger.info("VAD is disabled via configuration.")
         return PassthroughVadGate()
 
     try:
-        gate = SileroVadGate(threshold=settings.vad_threshold)
-        logger.info("Silero VAD enabled with threshold %.2f", settings.vad_threshold)
+        gate = SileroVadGate(threshold=vad_threshold, sample_rate=vad_sample_rate)
+        logger.info("Silero VAD enabled with threshold %.2f", vad_threshold)
         return gate
     except ImportError:
         logger.warning(

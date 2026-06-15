@@ -33,8 +33,7 @@ function mergeSegment(
   next[existingIndex] = {
     ...incoming,
     confidence: incoming.confidence ?? existing.confidence,
-    alternatives:
-      incoming.alternatives.length > 0 ? incoming.alternatives : existing.alternatives,
+    alternatives: incoming.alternatives.length > 0 ? incoming.alternatives : existing.alternatives,
   };
   return next;
 }
@@ -62,9 +61,7 @@ export function useTranscriptStream(
   const applySpeakerLabel = useCallback((speaker: Speaker) => {
     setSegments((current) =>
       current.map((segment) =>
-        segment.speaker_id === speaker.id
-          ? { ...segment, speaker_label: speaker.label }
-          : segment,
+        segment.speaker_id === speaker.id ? { ...segment, speaker_label: speaker.label } : segment,
       ),
     );
   }, []);

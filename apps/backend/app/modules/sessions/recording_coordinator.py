@@ -7,7 +7,6 @@ import numpy as np
 from rtt_shared.audio import CaptureStatusResponse
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.db.engine import get_engine
 from app.db.models import SegmentRow, SessionRow
 from app.modules.audio.capture import capture_service
@@ -37,6 +36,7 @@ class RecordingCoordinator:
         self._active_session_started_at: str | None = None
         self._audio_writer: SessionAudioWriter | None = None
         self._timeline_offset_ms = 0
+        self._session_transcription_language = "auto"
 
     @property
     def active_session_id(self) -> str | None:
@@ -73,8 +73,11 @@ class RecordingCoordinator:
 
             self._active_session_id = session_row.id
             self._active_session_started_at = session_row.started_at.isoformat()
+            self._session_transcription_language = runtime_settings.transcription_language
             self._audio_writer = (
-                SessionAudioWriter() if runtime_settings.save_session_audio else None
+                SessionAudioWriter(sample_rate=runtime_settings.audio_sample_rate)
+                if runtime_settings.save_session_audio
+                else None
             )
             self._timeline_offset_ms = 0
             self._worker_task = asyncio.create_task(self._transcription_loop(session_row.id))
@@ -84,6 +87,7 @@ class RecordingCoordinator:
         async with self._lock:
             session_id = self._active_session_id
             if session_id is None:
+                whisper_service.apply_pending_reload()
                 return None
 
             if self._worker_task is not None:
@@ -110,11 +114,14 @@ class RecordingCoordinator:
 
             await transcript_stream_manager.broadcast_closed(session_id)
 
+            whisper_service.apply_pending_reload()
+
             self._active_session_id = None
             self._active_session_started_at = None
             self._audio_writer = None
             self._worker_task = None
             self._timeline_offset_ms = 0
+            self._session_transcription_language = "auto"
             return session_row
 
     async def _transcription_loop(self, session_id: str) -> None:
@@ -131,7 +138,7 @@ class RecordingCoordinator:
                     self._audio_writer.append(chunk)
 
                 chunk_start_ms = self._timeline_offset_ms
-                chunk_duration_ms = int(chunk.size / settings.audio_sample_rate * 1000)
+                chunk_duration_ms = int(chunk.size / runtime_settings.audio_sample_rate * 1000)
                 self._timeline_offset_ms += chunk_duration_ms
 
                 await self._transcribe_chunk(session_id, chunk, chunk_start_ms)
@@ -151,11 +158,15 @@ class RecordingCoordinator:
 
         model = whisper_service.get_model()
 
+        language = None
+        if self._session_transcription_language != "auto":
+            language = self._session_transcription_language
+
         def _run_transcription() -> list[tuple[str, int, int, float | None]]:
             segments, _info = model.transcribe(
                 chunk,
                 beam_size=1,
-                language=None,
+                language=language,
                 vad_filter=False,
             )
             results: list[tuple[str, int, int, float | None]] = []
@@ -185,9 +196,7 @@ class RecordingCoordinator:
         pending_broadcasts: list[PendingSegmentBroadcast] = []
         with Session(engine) as db:
             session_row = session_service.get_by_id(db, session_id)
-            speaker_labels = {
-                speaker.id: speaker.label for speaker in session_row.speakers
-            }
+            speaker_labels = {speaker.id: speaker.label for speaker in session_row.speakers}
             default_speaker_id = sorted(
                 session_row.speakers, key=lambda speaker: speaker.sort_order
             )[0].id

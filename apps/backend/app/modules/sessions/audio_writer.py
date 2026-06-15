@@ -2,11 +2,12 @@ import wave
 
 import numpy as np
 
-from app.config import resolve_session_audio_dir, settings
+from app.config import resolve_session_audio_dir
 
 
 class SessionAudioWriter:
-    def __init__(self) -> None:
+    def __init__(self, *, sample_rate: int) -> None:
+        self._sample_rate = sample_rate
         self._chunks: list[np.ndarray] = []
 
     def append(self, chunk: np.ndarray) -> None:
@@ -19,7 +20,7 @@ class SessionAudioWriter:
         if not self._chunks:
             return 0
         total_samples = sum(chunk.size for chunk in self._chunks)
-        return int(total_samples / settings.audio_sample_rate * 1000)
+        return int(total_samples / self._sample_rate * 1000)
 
     def save(self, session_id: str) -> str | None:
         if not self._chunks:
@@ -36,7 +37,7 @@ class SessionAudioWriter:
         with wave.open(str(output_path), "wb") as wav_file:
             wav_file.setnchannels(1)
             wav_file.setsampwidth(2)
-            wav_file.setframerate(settings.audio_sample_rate)
+            wav_file.setframerate(self._sample_rate)
             wav_file.writeframes(pcm.tobytes())
 
-        return str(output_path.resolve())
+        return str(output_path)

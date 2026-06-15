@@ -18,9 +18,7 @@ async def transcript_stream(websocket: WebSocket, session_id: str) -> None:
     try:
         queue = await transcript_stream_manager.subscribe(session_id)
     except SessionError as exc:
-        await websocket.send_json(
-            {"type": "error", "code": exc.code, "message": exc.message}
-        )
+        await websocket.send_json({"type": "error", "code": exc.code, "message": exc.message})
         await websocket.close()
         return
     except Exception:

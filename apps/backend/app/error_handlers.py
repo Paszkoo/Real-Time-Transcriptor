@@ -5,6 +5,7 @@ from app.modules.audio.errors import AudioError
 from app.modules.export.errors import ExportError
 from app.modules.llm.errors import LlmError
 from app.modules.sessions.errors import SessionError
+from app.modules.settings.errors import SettingsError
 from app.modules.transcription.errors import TranscriptionError
 
 ERROR_STATUS_CODES: dict[str, int] = {
@@ -35,12 +36,14 @@ ERROR_STATUS_CODES: dict[str, int] = {
     "unsupported_export_format": 400,
     "export_error": 400,
     "export_no_transcript": 400,
+    "invalid_settings": 400,
+    "settings_error": 400,
 }
 
 
 async def domain_error_handler(
     _request: Request,
-    error: AudioError | TranscriptionError | SessionError | LlmError | ExportError,
+    error: AudioError | TranscriptionError | SessionError | LlmError | ExportError | SettingsError,
 ) -> JSONResponse:
     status_code = ERROR_STATUS_CODES.get(error.code, 400)
     return JSONResponse(

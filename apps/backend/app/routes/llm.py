@@ -35,9 +35,7 @@ async def llm_job_stream(websocket: WebSocket, job_id: str) -> None:
     try:
         queue = await llm_job_manager.subscribe(job_id)
     except LlmError as exc:
-        await websocket.send_json(
-            {"type": "error", "code": exc.code, "message": exc.message}
-        )
+        await websocket.send_json({"type": "error", "code": exc.code, "message": exc.message})
         await websocket.close()
         return
     except Exception:

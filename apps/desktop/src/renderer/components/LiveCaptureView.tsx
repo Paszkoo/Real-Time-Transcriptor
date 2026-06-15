@@ -14,11 +14,7 @@ interface LiveCaptureViewProps {
   capture: AudioCaptureState;
 }
 
-export function LiveCaptureView({
-  backendOnline,
-  connection,
-  capture,
-}: LiveCaptureViewProps) {
+export function LiveCaptureView({ backendOnline, connection, capture }: LiveCaptureViewProps) {
   const {
     captureStatus,
     isSubmitting,

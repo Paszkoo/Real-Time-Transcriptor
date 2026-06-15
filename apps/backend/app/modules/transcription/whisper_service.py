@@ -5,7 +5,8 @@ import logging
 import threading
 from typing import TYPE_CHECKING
 
-from app.config import resolve_whisper_model_dir, settings
+from app.config import resolve_whisper_model_dir
+from app.modules.settings.runtime import runtime_settings
 from app.modules.transcription.errors import (
     WhisperModelLoadError,
     WhisperModelNotAvailableError,
@@ -18,13 +19,13 @@ logger = logging.getLogger(__name__)
 
 
 def _resolve_device() -> str:
-    device = settings.device.lower()
+    device = runtime_settings.device.lower()
     if device == "mps":
         logger.warning("faster-whisper does not support MPS; falling back to CPU.")
         return "cpu"
     if device in ("cpu", "cuda"):
         return device
-    logger.warning("Unknown DEVICE=%s; falling back to CPU.", settings.device)
+    logger.warning("Unknown DEVICE=%s; falling back to CPU.", runtime_settings.device)
     return "cpu"
 
 
@@ -38,6 +39,7 @@ class WhisperService:
     def __init__(self) -> None:
         self._model: WhisperModel | None = None
         self._load_lock = threading.Lock()
+        self._pending_reload = False
 
     @property
     def is_loaded(self) -> bool:
@@ -48,6 +50,25 @@ class WhisperService:
 
     async def ensure_loaded_async(self) -> None:
         await asyncio.to_thread(self._load_model)
+
+    def unload(self) -> None:
+        with self._load_lock:
+            self._model = None
+            logger.info("Whisper model unloaded; will reload on next session.")
+
+    def request_reload(self, *, defer: bool) -> None:
+        if defer:
+            self._pending_reload = True
+            logger.info("Whisper reload deferred until capture stops.")
+            return
+        self._pending_reload = False
+        self.unload()
+
+    def apply_pending_reload(self) -> None:
+        if not self._pending_reload:
+            return
+        self._pending_reload = False
+        self.unload()
 
     def get_model(self) -> WhisperModel:
         self._load_model()
@@ -75,7 +96,7 @@ class WhisperService:
 
             logger.info(
                 "Loading Whisper model '%s' (device=%s, compute_type=%s, dir=%s)",
-                settings.whisper_model_name,
+                runtime_settings.whisper_model_name,
                 device,
                 compute_type,
                 model_dir,
@@ -83,17 +104,17 @@ class WhisperService:
 
             try:
                 self._model = WhisperModel(
-                    settings.whisper_model_name,
+                    runtime_settings.whisper_model_name,
                     device=device,
                     compute_type=compute_type,
                     download_root=model_dir,
                 )
             except Exception as exc:
                 raise WhisperModelLoadError(
-                    f"Failed to load Whisper model '{settings.whisper_model_name}': {exc}"
+                    f"Failed to load Whisper model '{runtime_settings.whisper_model_name}': {exc}"
                 ) from exc
 
-            logger.info("Whisper model '%s' ready.", settings.whisper_model_name)
+            logger.info("Whisper model '%s' ready.", runtime_settings.whisper_model_name)
 
 
 whisper_service = WhisperService()

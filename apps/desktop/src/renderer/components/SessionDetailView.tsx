@@ -1,4 +1,4 @@
-import type { SessionDetail } from "@real-time-transcriptor/shared";
+import type { SessionDetail, SessionExportFormat } from "@real-time-transcriptor/shared";
 import { useEffect, useRef, useState } from "react";
 
 import { SessionInsightsPanel } from "./SessionInsightsPanel";
@@ -10,6 +10,7 @@ import { getSessionAudioUrl } from "../lib/sessionsApi";
 interface SessionDetailViewProps {
   session: SessionDetail;
   connection: BackendConnection;
+  defaultExportFormats: SessionExportFormat[];
   onBack: () => void;
   onArtifactsUpdated: () => void;
 }
@@ -17,6 +18,7 @@ interface SessionDetailViewProps {
 export function SessionDetailView({
   session,
   connection,
+  defaultExportFormats,
   onBack,
   onArtifactsUpdated,
 }: SessionDetailViewProps) {
@@ -83,14 +85,21 @@ export function SessionDetailView({
         onArtifactsUpdated={onArtifactsUpdated}
       />
 
-      <SessionExportPanel session={session} connection={connection} />
+      <SessionExportPanel
+        session={session}
+        connection={connection}
+        defaultExportFormats={defaultExportFormats}
+      />
 
       <div className="mt-5 space-y-4">
         {session.segments.length === 0 ? (
           <p className="text-sm text-slate-500">This session has no transcript segments yet.</p>
         ) : (
           session.segments.map((segment) => (
-            <article key={segment.id} className="rounded-lg border border-slate-800 bg-slate-950/60 p-4">
+            <article
+              key={segment.id}
+              className="rounded-lg border border-slate-800 bg-slate-950/60 p-4"
+            >
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="rounded-full bg-slate-800 px-2 py-1 font-medium text-slate-300">
                   {segment.speaker_label}

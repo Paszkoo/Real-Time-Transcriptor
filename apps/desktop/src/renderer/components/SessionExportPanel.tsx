@@ -1,16 +1,13 @@
-import type { SessionDetail } from "@real-time-transcriptor/shared";
-import { useState } from "react";
+import type { SessionDetail, SessionExportFormat } from "@real-time-transcriptor/shared";
+import { useEffect, useState } from "react";
 
 import { type BackendConnection } from "../lib/backendApi";
-import {
-  fetchSessionExport,
-  SESSION_EXPORT_FORMATS,
-  type SessionExportFormat,
-} from "../lib/sessionsApi";
+import { fetchSessionExport, SESSION_EXPORT_FORMATS } from "../lib/sessionsApi";
 
 interface SessionExportPanelProps {
   session: SessionDetail;
   connection: BackendConnection;
+  defaultExportFormats: SessionExportFormat[];
 }
 
 const FORMAT_LABELS = new Map(
@@ -67,19 +64,26 @@ async function exportSelectedFormats(
   return { savedPaths, canceledCount, errorMessage: null };
 }
 
-export function SessionExportPanel({ session, connection }: SessionExportPanelProps) {
-  const [selectedFormats, setSelectedFormats] = useState<SessionExportFormat[]>(["pdf"]);
+export function SessionExportPanel({
+  session,
+  connection,
+  defaultExportFormats,
+}: SessionExportPanelProps) {
+  const [selectedFormats, setSelectedFormats] =
+    useState<SessionExportFormat[]>(defaultExportFormats);
   const [isExporting, setIsExporting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedFormats(defaultExportFormats);
+  }, [defaultExportFormats]);
 
   const canExport = session.segments.length > 0 && selectedFormats.length > 0 && !isExporting;
 
   const toggleFormat = (format: SessionExportFormat) => {
     setSelectedFormats((current) =>
-      current.includes(format)
-        ? current.filter((entry) => entry !== format)
-        : [...current, format],
+      current.includes(format) ? current.filter((entry) => entry !== format) : [...current, format],
     );
   };
 

@@ -1,7 +1,4 @@
-import type {
-  SetupProgressEvent,
-  SetupSnapshot,
-} from "../electron-api.types";
+import type { SetupProgressEvent, SetupSnapshot } from "../electron-api.types";
 
 export type { SetupSnapshot } from "../electron-api.types";
 

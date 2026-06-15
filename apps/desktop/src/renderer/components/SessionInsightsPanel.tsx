@@ -96,9 +96,7 @@ export function SessionInsightsPanel({
         </div>
       ) : null}
 
-      {insights.error ? (
-        <p className="mt-3 text-sm text-rose-400">{insights.error}</p>
-      ) : null}
+      {insights.error ? <p className="mt-3 text-sm text-rose-400">{insights.error}</p> : null}
 
       <div className="mt-4 min-h-[8rem] rounded-lg border border-slate-800 bg-slate-900 p-4">
         {insights.displayedText ? (

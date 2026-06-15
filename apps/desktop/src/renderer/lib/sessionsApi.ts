@@ -1,8 +1,7 @@
 import {
-  type AppSettings,
-  type AppSettingsUpdateRequest,
   type ApiErrorResponse,
   type SessionDetail,
+  type SessionExportFormat,
   type SessionsListResponse,
 } from "@real-time-transcriptor/shared";
 
@@ -13,7 +12,7 @@ import {
   type BackendConnection,
 } from "./backendApi";
 
-export type SessionExportFormat = "pdf" | "docx" | "txt" | "srt" | "vtt" | "json";
+export type { SessionExportFormat };
 
 export interface SessionExportFormatOption {
   id: SessionExportFormat;
@@ -57,20 +56,6 @@ export function getSessionAudioUrl(connection: BackendConnection, audioPath: str
   return `${getBackendBaseUrl(connection)}${audioPath}`;
 }
 
-export async function fetchSettings(connection: BackendConnection) {
-  return fetchBackendJson<AppSettings>(connection, "/api/settings");
-}
-
-export async function updateSettings(
-  connection: BackendConnection,
-  body: AppSettingsUpdateRequest,
-) {
-  return fetchBackendJson<AppSettings>(connection, "/api/settings", {
-    method: "PATCH",
-    body: JSON.stringify(body),
-  });
-}
-
 function parseContentDispositionFilename(disposition: string, fallback: string): string {
   const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
   if (utf8Match?.[1]) {
@@ -89,7 +74,9 @@ export async function fetchSessionExport(
   connection: BackendConnection,
   sessionId: string,
   format: SessionExportFormat,
-): Promise<{ ok: true; data: ArrayBuffer; filename: string } | { ok: false; error: ApiErrorResponse }> {
+): Promise<
+  { ok: true; data: ArrayBuffer; filename: string } | { ok: false; error: ApiErrorResponse }
+> {
   const path = `/api/sessions/${sessionId}/export?format=${encodeURIComponent(format)}`;
   const result = await fetchBackendArrayBuffer(connection, path);
 

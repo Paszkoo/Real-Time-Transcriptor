@@ -48,8 +48,7 @@ export function useSessionInsights({
     sessionId,
   };
 
-  const isGenerating =
-    generatingContext !== null && matchesContext(generatingContext, viewContext);
+  const isGenerating = generatingContext !== null && matchesContext(generatingContext, viewContext);
 
   const artifactType = artifactTypeForTab(activeTab, summaryFormat);
   const savedArtifact = artifacts.find((artifact) => artifact.artifact_type === artifactType);
@@ -138,9 +137,7 @@ export function useSessionInsights({
     summaryFormat,
   ]);
 
-  const displayedText = isGenerating
-    ? streamText
-    : streamText || savedArtifact?.content || "";
+  const displayedText = isGenerating ? streamText : streamText || savedArtifact?.content || "";
 
   return {
     activeTab,

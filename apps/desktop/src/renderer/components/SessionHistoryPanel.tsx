@@ -68,7 +68,10 @@ export function SessionHistoryPanel({
         ) : null}
 
         {sessions.map((session) => (
-          <li key={session.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between">
+          <li
+            key={session.id}
+            className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between"
+          >
             <button
               type="button"
               className="flex-1 text-left transition hover:opacity-90"

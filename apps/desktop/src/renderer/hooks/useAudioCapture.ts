@@ -20,7 +20,7 @@ type CaptureActionResult =
   | { ok: true; data: CaptureStatusResponse }
   | { ok: false; error: { message: string } | null };
 
-export function useAudioCapture(backendOnline: boolean) {
+export function useAudioCapture(backendOnline: boolean, defaultDeviceId: number | null = null) {
   const [devices, setDevices] = useState<AudioDevice[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<number | null>(null);
   const [captureStatus, setCaptureStatus] = useState<CaptureStatusResponse | null>(null);
@@ -53,10 +53,17 @@ export function useAudioCapture(backendOnline: boolean) {
         return current;
       }
 
+      if (
+        defaultDeviceId !== null &&
+        result.data.devices.some((device) => device.id === defaultDeviceId)
+      ) {
+        return defaultDeviceId;
+      }
+
       const defaultDevice = result.data.devices.find((device) => device.is_default);
       return defaultDevice?.id ?? result.data.devices[0]?.id ?? null;
     });
-  }, [backendOnline]);
+  }, [backendOnline, defaultDeviceId]);
 
   const refreshCaptureStatus = useCallback(async () => {
     if (!backendOnline) {
@@ -81,6 +88,19 @@ export function useAudioCapture(backendOnline: boolean) {
     void refreshDevices();
     void refreshCaptureStatus();
   }, [backendOnline, refreshDevices, refreshCaptureStatus]);
+
+  useEffect(() => {
+    if (defaultDeviceId === null || captureStatus?.is_capturing) {
+      return;
+    }
+
+    setSelectedDeviceId((current) => {
+      if (devices.some((device) => device.id === defaultDeviceId)) {
+        return defaultDeviceId;
+      }
+      return current;
+    });
+  }, [captureStatus?.is_capturing, defaultDeviceId, devices]);
 
   useEffect(() => {
     const api = window.electronAPI;

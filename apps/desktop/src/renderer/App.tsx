@@ -8,6 +8,7 @@ import { useAppSettings } from "./hooks/useAppSettings";
 import { useAppView } from "./hooks/useAppView";
 import { useAudioCapture } from "./hooks/useAudioCapture";
 import { useBackendHealth, type BackendStatus } from "./hooks/useBackendHealth";
+import { useDesktopSettings } from "./hooks/useDesktopSettings";
 import { useSessionDetail } from "./hooks/useSessionDetail";
 import { useSessions } from "./hooks/useSessions";
 import { useSetupState } from "./hooks/useSetupState";
@@ -37,9 +38,13 @@ export function App() {
   const { status, health } = useBackendHealth();
   const setupUi = useSetupState();
   const backendOnline = status === "online";
-  const audioCapture = useAudioCapture(backendOnline);
-  const sessionsState = useSessions(backendOnline);
   const appSettings = useAppSettings(backendOnline);
+  const desktopSettings = useDesktopSettings();
+  const audioCapture = useAudioCapture(
+    backendOnline,
+    appSettings.settings?.default_audio_device_id ?? null,
+  );
+  const sessionsState = useSessions(backendOnline);
   const appView = useAppView();
 
   const [backendConnection, setBackendConnection] = useState<BackendConnection | null>(null);
@@ -85,9 +90,7 @@ export function App() {
           aria-hidden="true"
         />
         <span className="text-sm font-medium">{STATUS_LABEL[status]}</span>
-        {health ? (
-          <span className="text-xs text-slate-500">v{health.backend_version}</span>
-        ) : null}
+        {health ? <span className="text-xs text-slate-500">v{health.backend_version}</span> : null}
       </div>
 
       <nav className="flex flex-wrap items-center justify-center gap-2">
@@ -153,6 +156,7 @@ export function App() {
         <SessionDetailView
           session={sessionDetail.session}
           connection={backendConnection}
+          defaultExportFormats={appSettings.settings?.default_export_formats ?? ["pdf", "txt"]}
           onBack={appView.closeSessionView}
           onArtifactsUpdated={() => void sessionDetail.refreshSession()}
         />
@@ -168,10 +172,14 @@ export function App() {
 
       {appView.view === "settings" ? (
         <SettingsPanel
-          saveSessionAudio={appSettings.settings?.save_session_audio ?? false}
+          settings={appSettings.settings}
+          activeTab={desktopSettings.desktopSettings?.last_settings_tab ?? "audio"}
           isSaving={appSettings.isSaving}
           error={appSettings.error}
-          onToggleSaveSessionAudio={(enabled) => void appSettings.setSaveSessionAudio(enabled)}
+          backendOnline={backendOnline}
+          isCapturing={isCapturing}
+          onTabChange={(tab) => void desktopSettings.setLastSettingsTab(tab)}
+          onPatch={appSettings.patchSettings}
         />
       ) : null}
     </main>

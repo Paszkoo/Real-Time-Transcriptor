@@ -50,9 +50,7 @@ export function CaptureControlsPanel({
         {isCapturing ? (
           <span
             className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
-              isPaused
-                ? "bg-amber-500/10 text-amber-300"
-                : "bg-emerald-500/10 text-emerald-400"
+              isPaused ? "bg-amber-500/10 text-amber-300" : "bg-emerald-500/10 text-emerald-400"
             }`}
           >
             <span
@@ -145,7 +143,9 @@ export function CaptureControlsPanel({
       ) : null}
 
       {!backendOnline ? (
-        <p className="mt-3 text-xs text-amber-400">Connect to the backend to manage audio devices.</p>
+        <p className="mt-3 text-xs text-amber-400">
+          Connect to the backend to manage audio devices.
+        </p>
       ) : null}
 
       {error ? <p className="mt-3 text-sm text-rose-400">{error}</p> : null}

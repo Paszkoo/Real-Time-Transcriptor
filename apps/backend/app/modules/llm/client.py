@@ -12,6 +12,7 @@ from app.modules.llm.errors import (
     OLLAMA_UNAVAILABLE_MESSAGE,
     OllamaUnavailableError,
 )
+from app.modules.settings.runtime import runtime_settings
 
 logger = logging.getLogger(__name__)
 
@@ -41,11 +42,9 @@ class OllamaClient:
         except (httpx.ConnectError, httpx.TimeoutException) as exc:
             raise OllamaUnavailableError() from exc
         except httpx.HTTPError as exc:
-            raise OllamaUnavailableError(
-                f"{OLLAMA_UNAVAILABLE_MESSAGE} Details: {exc}"
-            ) from exc
+            raise OllamaUnavailableError(f"{OLLAMA_UNAVAILABLE_MESSAGE} Details: {exc}") from exc
 
-        if not is_ollama_model_available(settings.ollama_model, tags):
+        if not is_ollama_model_available(runtime_settings.ollama_model, tags):
             raise OllamaUnavailableError(OLLAMA_MODEL_MISSING_MESSAGE)
 
     async def stream_chat(
@@ -55,7 +54,7 @@ class OllamaClient:
         temperature: float,
     ) -> AsyncIterator[str]:
         payload = {
-            "model": settings.ollama_model,
+            "model": runtime_settings.ollama_model,
             "messages": [{"role": "user", "content": prompt}],
             "stream": True,
             "options": {"temperature": temperature},
@@ -85,9 +84,7 @@ class OllamaClient:
             ) from exc
         except httpx.HTTPError as exc:
             logger.exception("Ollama request failed")
-            raise OllamaUnavailableError(
-                f"{OLLAMA_UNAVAILABLE_MESSAGE} Details: {exc}"
-            ) from exc
+            raise OllamaUnavailableError(f"{OLLAMA_UNAVAILABLE_MESSAGE} Details: {exc}") from exc
 
 
 ollama_client = OllamaClient()

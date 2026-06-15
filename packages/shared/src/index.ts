@@ -122,11 +122,105 @@ export interface SessionsListResponse {
 
 export interface AppSettings {
   save_session_audio: boolean;
+  whisper_model_name: string;
+  ollama_model: string;
+  device: "cpu" | "cuda";
+  audio_sample_rate: number;
+  audio_chunk_duration_s: number;
+  audio_chunk_overlap_s: number;
+  vad_enabled: boolean;
+  vad_threshold: number;
+  default_audio_device_id: number | null;
+  transcription_language: TranscriptionLanguage;
+  default_export_formats: SessionExportFormat[];
 }
 
 export interface AppSettingsUpdateRequest {
   save_session_audio?: boolean;
+  whisper_model_name?: string;
+  ollama_model?: string;
+  device?: "cpu" | "cuda";
+  audio_sample_rate?: number;
+  audio_chunk_duration_s?: number;
+  audio_chunk_overlap_s?: number;
+  vad_enabled?: boolean;
+  vad_threshold?: number;
+  default_audio_device_id?: number | null;
+  transcription_language?: TranscriptionLanguage;
+  default_export_formats?: SessionExportFormat[];
 }
+
+export type TranscriptionLanguage = "auto" | "pl" | "en" | "de" | "fr" | "es" | "it" | "uk";
+
+export type SessionExportFormat = "pdf" | "docx" | "txt" | "srt" | "vtt" | "json";
+
+export type SettingsTab = "audio" | "models" | "export" | "advanced";
+
+export interface DesktopSettings {
+  last_settings_tab: SettingsTab;
+}
+
+export interface DesktopSettingsUpdateRequest {
+  last_settings_tab?: SettingsTab;
+}
+
+export interface WhisperModelOption {
+  id: string;
+  label: string;
+  size_gb: number;
+  vram_gb: number | null;
+}
+
+export interface WhisperModelsResponse {
+  models: WhisperModelOption[];
+  active_model: string;
+}
+
+export interface OllamaModelInfo {
+  name: string;
+  size: number | null;
+}
+
+export interface OllamaModelsResponse {
+  available: boolean;
+  models: OllamaModelInfo[];
+  active_model: string;
+}
+
+export interface DiagnosticsInfo {
+  app_version: string;
+  backend_version: string;
+  whisper_model_name: string;
+  whisper_model_loaded: boolean;
+  ollama_model: string;
+  ollama_available: boolean;
+  device: string;
+  vram_total_mb: number | null;
+  vram_free_mb: number | null;
+  audio_devices_count: number;
+}
+
+export interface DiagnosticIssue {
+  severity: "error" | "warning" | "info";
+  code: string;
+  message: string;
+  suggestion: string;
+}
+
+export interface DiagnosticsCheckResponse {
+  issues: DiagnosticIssue[];
+}
+
+export const TRANSCRIPTION_LANGUAGE_OPTIONS: { value: TranscriptionLanguage; label: string }[] = [
+  { value: "auto", label: "Automatic" },
+  { value: "pl", label: "Polish" },
+  { value: "en", label: "English" },
+  { value: "de", label: "German" },
+  { value: "fr", label: "French" },
+  { value: "es", label: "Spanish" },
+  { value: "it", label: "Italian" },
+  { value: "uk", label: "Ukrainian" },
+];
 
 export const DEFAULT_BACKEND_PORT = 8765;
 export const HEALTH_POLL_INTERVAL_MS = 2000;

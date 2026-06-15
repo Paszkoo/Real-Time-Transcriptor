@@ -16,10 +16,7 @@ export function setSetupSnapshot(next: SetupSnapshot): void {
   snapshot = next;
 }
 
-export function initializeSetupSnapshot(
-  backendDir: string,
-  runOnStart: boolean,
-): SetupSnapshot {
+export function initializeSetupSnapshot(backendDir: string, runOnStart: boolean): SetupSnapshot {
   if (isModelSetupComplete(backendDir)) {
     const next: SetupSnapshot = { status: "skipped", reason: "already-complete" };
     setSetupSnapshot(next);

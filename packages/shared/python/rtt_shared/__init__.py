@@ -7,9 +7,18 @@ from rtt_shared.audio import (
     ErrorResponse,
 )
 from rtt_shared.health import HealthResponse
-from rtt_shared.sessions import (
+from rtt_shared.settings import (
     AppSettingsResponse,
     AppSettingsUpdateRequest,
+    DiagnosticIssueResponse,
+    DiagnosticsCheckResponse,
+    DiagnosticsResponse,
+    OllamaModelResponse,
+    OllamaModelsResponse,
+    WhisperModelOptionResponse,
+    WhisperModelsResponse,
+)
+from rtt_shared.sessions import (
     ProcessSessionRequest,
     ProcessSessionResponse,
     SegmentResponse,
@@ -31,6 +40,13 @@ __all__ = [
     "HealthResponse",
     "AppSettingsResponse",
     "AppSettingsUpdateRequest",
+    "DiagnosticIssueResponse",
+    "DiagnosticsCheckResponse",
+    "DiagnosticsResponse",
+    "OllamaModelResponse",
+    "OllamaModelsResponse",
+    "WhisperModelOptionResponse",
+    "WhisperModelsResponse",
     "SegmentResponse",
     "SessionArtifactResponse",
     "ProcessSessionRequest",
