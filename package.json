@@ -12,7 +12,10 @@
     "lint": "npm run lint --workspace=@real-time-transcriptor/desktop && npm run lint:python",
     "lint:python": "node scripts/lint-python.mjs",
     "format": "npm run format --workspace=@real-time-transcriptor/desktop && node scripts/lint-python.mjs format apps/backend",
-    "setup:models": "node scripts/run-setup.mjs"
+    "setup:models": "node scripts/run-setup.mjs",
+    "build:backend": "node scripts/build-backend.mjs",
+    "make": "npm run build:backend && npm run make --workspace=@real-time-transcriptor/desktop",
+    "publish:desktop": "npm run build:backend && npm run publish --workspace=@real-time-transcriptor/desktop"
   },
   "engines": {
     "node": ">=20"

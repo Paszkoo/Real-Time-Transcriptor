@@ -22,7 +22,7 @@ export function ensureBackendVenvPython() {
     "Python venv not found. Create it first:\n" +
       "  cd apps/backend\n" +
       "  python -m venv .venv\n" +
-      '  pip install -e ".[dev]"',
+      '  pip install -e ".[dev,models,packaging]"',
   );
   process.exit(1);
 }

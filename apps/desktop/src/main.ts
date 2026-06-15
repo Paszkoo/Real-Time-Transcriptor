@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
 import started from "electron-squirrel-startup";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -9,8 +9,7 @@ import { getDesktopSettings, patchDesktopSettings } from "./settings-store";
 
 import {
   ensureBackendRunning,
-  resolveBackendDir,
-  resolvePythonExecutable,
+  getPackagedBundleErrorMessage,
   startBackend,
   stopBackend,
 } from "./backend-process";
@@ -21,13 +20,31 @@ import {
   shouldOpenDevTools,
   shouldRunModelSetupOnStart,
 } from "./env";
-import { runModelSetup } from "./setup-runner";
+import { isSetupRunning, runModelSetup, SetupFailure } from "./setup-runner";
 import { getSetupSnapshot, initializeSetupSnapshot, setSetupSnapshot } from "./setup-state";
+import { initAutoUpdater, installPendingUpdate } from "./updater";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
+const ALLOWED_EXTERNAL_URL_PREFIXES = ["https://ollama.com/"];
+
 let mainWindow: BrowserWindow | null = null;
+
+function isAllowedExternalUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") {
+      return false;
+    }
+
+    return ALLOWED_EXTERNAL_URL_PREFIXES.some(
+      (prefix) => parsed.href === prefix || parsed.href.startsWith(prefix),
+    );
+  } catch {
+    return false;
+  }
+}
 
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
@@ -76,9 +93,13 @@ async function maybeRunFirstLaunchSetup(window: BrowserWindow): Promise<void> {
   window.webContents.send("setup:start");
 
   try {
-    await runModelSetup(resolveBackendDir(), resolvePythonExecutable(), window);
+    await runModelSetup(window);
     setSetupSnapshot({ status: "complete" });
   } catch (error) {
+    if (error instanceof SetupFailure) {
+      return;
+    }
+
     const message = error instanceof Error ? error.message : "Model setup failed";
     setSetupSnapshot({ status: "error", message });
     console.error("[setup] first launch setup failed:", error);
@@ -100,6 +121,30 @@ app.whenReady().then(async () => {
     patchDesktopSettings(update),
   );
   ipcMain.handle("get-app-version", () => app.getVersion());
+  ipcMain.handle("open-external-url", (_event, url: string) => {
+    if (!isAllowedExternalUrl(url)) {
+      throw new Error("URL is not allowed.");
+    }
+
+    void shell.openExternal(url);
+  });
+  ipcMain.handle("retry-model-setup", async () => {
+    const window = mainWindow ?? BrowserWindow.getAllWindows()[0];
+    if (!window) {
+      throw new Error("No application window available for setup.");
+    }
+
+    if (isSetupRunning()) {
+      return getSetupSnapshot();
+    }
+
+    setSetupSnapshot({ status: "idle" });
+    await maybeRunFirstLaunchSetup(window);
+    return getSetupSnapshot();
+  });
+  ipcMain.handle("install-app-update", () => {
+    installPendingUpdate();
+  });
   ipcMain.handle("save-export-file", async (_event, request: SaveExportFileRequest) => {
     const window = BrowserWindow.getFocusedWindow() ?? mainWindow;
     const result = await dialog.showSaveDialog(window ?? undefined, {
@@ -115,11 +160,22 @@ app.whenReady().then(async () => {
     return { canceled: false, filePath: result.filePath };
   });
 
-  initializeSetupSnapshot(resolveBackendDir(), shouldRunModelSetupOnStart());
+  initializeSetupSnapshot(shouldRunModelSetupOnStart());
+
+  const bundleError = getPackagedBundleErrorMessage();
+  if (bundleError) {
+    setSetupSnapshot({ status: "error", message: bundleError });
+  }
+
   startBackend();
 
   mainWindow = createWindow();
   await waitForWindowLoad(mainWindow);
+
+  if (app.isPackaged) {
+    initAutoUpdater(mainWindow);
+  }
+
   await maybeRunFirstLaunchSetup(mainWindow);
 
   app.on("activate", () => {

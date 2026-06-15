@@ -7,7 +7,7 @@ import { resolveRepoRootFromMain } from "./paths";
 
 export function resolveRepoRoot(): string {
   if (app.isPackaged) {
-    return path.join(process.resourcesPath, "..");
+    return app.getPath("userData");
   }
 
   return resolveRepoRootFromMain(__dirname);
@@ -33,10 +33,18 @@ export function getBackendPort(): number {
 }
 
 export function getWhisperModelDir(): string {
+  if (app.isPackaged) {
+    return path.join(app.getPath("userData"), "models", "whisper");
+  }
+
   return process.env.WHISPER_MODEL_DIR ?? "./models/whisper";
 }
 
 export function shouldRunModelSetupOnStart(): boolean {
+  if (app.isPackaged) {
+    return true;
+  }
+
   return process.env.RUN_MODEL_SETUP_ON_START === "true";
 }
 

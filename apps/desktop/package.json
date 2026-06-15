@@ -8,6 +8,7 @@
     "dev": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
+    "publish": "electron-forge publish",
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
   },
@@ -15,6 +16,7 @@
     "@real-time-transcriptor/shared": "*",
     "dotenv": "^16.4.7",
     "electron-store": "^10.1.0",
+    "electron-updater": "^6.3.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

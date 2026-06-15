@@ -108,16 +108,33 @@ packages/
 
 ## Packaging
 
-From `apps/desktop`:
+Production builds bundle the Python backend with PyInstaller and ship it inside the Electron app.
 
 ```bash
 npm run make
 ```
 
+This runs `build:backend` first, then Electron Forge `make`.
+
 Build targets:
 
-- **Windows** — Squirrel installer
-- **macOS** — DMG
+- **Windows** — Squirrel installer (`.exe`)
+- **macOS** — DMG (+ ZIP artifact)
+
+Packaged apps run first-run model setup automatically. Ollama must still be installed separately; the wizard links to the download page if it is missing.
+
+Release builds are produced by GitHub Actions on tags matching `v*` (see `.github/workflows/release.yml`).
+
+Optional signing env vars for CI/local packaging:
+
+| Variable | Platform |
+|----------|----------|
+| `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` | macOS notarization |
+| `APPLE_SIGNING_IDENTITY` | macOS signing identity override |
+| `WINDOWS_CERT_BASE64`, `WINDOWS_CERT_PASSWORD` | Windows code signing (CI decodes cert to a temp `.pfx`) |
+| `WINDOWS_CERT_FILE`, `WINDOWS_CERT_PASSWORD` | Windows code signing for local builds |
+
+Smoke test checklist: `docs/packaging/smoke-test-checklist.md`.
 
 ## Pre-commit hooks
 

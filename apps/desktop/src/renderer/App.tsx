@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+import { FirstRunWizard } from "./components/FirstRunWizard";
 import { LiveCaptureView } from "./components/LiveCaptureView";
 import { SessionDetailView } from "./components/SessionDetailView";
 import { SessionHistoryPanel } from "./components/SessionHistoryPanel";
@@ -11,7 +12,10 @@ import { useBackendHealth, type BackendStatus } from "./hooks/useBackendHealth";
 import { useDesktopSettings } from "./hooks/useDesktopSettings";
 import { useSessionDetail } from "./hooks/useSessionDetail";
 import { useSessions } from "./hooks/useSessions";
+import { UpdateBanner } from "./components/UpdateBanner";
 import { useSetupState } from "./hooks/useSetupState";
+import { isSetupBlockingCapture } from "./setup-ui-state";
+
 import { resolveBackendConnection, type BackendConnection } from "./lib/backendApi";
 
 const STATUS_LABEL: Record<BackendStatus, string> = {
@@ -37,11 +41,12 @@ const NAV_ITEMS = [
 export function App() {
   const { status, health } = useBackendHealth();
   const setupUi = useSetupState();
+  const captureReady = status === "online" && !isSetupBlockingCapture(setupUi.status);
   const backendOnline = status === "online";
   const appSettings = useAppSettings(backendOnline);
   const desktopSettings = useDesktopSettings();
   const audioCapture = useAudioCapture(
-    backendOnline,
+    captureReady,
     appSettings.settings?.default_audio_device_id ?? null,
   );
   const sessionsState = useSessions(backendOnline);
@@ -110,22 +115,9 @@ export function App() {
         ))}
       </nav>
 
-      {setupUi.status === "running" ? (
-        <section className="w-full max-w-lg rounded-xl border border-slate-800 bg-slate-900 p-5">
-          <p className="text-sm font-medium text-slate-200">First-run model setup</p>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
-            <div
-              className="h-full rounded-full bg-sky-500 transition-all duration-300"
-              style={{ width: `${setupUi.progress.percent}%` }}
-            />
-          </div>
-          <p className="mt-2 truncate text-xs text-slate-400">{setupUi.progress.message}</p>
-        </section>
-      ) : null}
+      <UpdateBanner />
 
-      {setupUi.status === "error" ? (
-        <p className="max-w-lg text-center text-sm text-rose-400">{setupUi.progress.message}</p>
-      ) : null}
+      <FirstRunWizard setupUi={setupUi} />
 
       {setupUi.status === "skipped" && setupUi.hint ? (
         <p className="max-w-lg text-center text-xs text-slate-500">{setupUi.hint}</p>
@@ -133,7 +125,7 @@ export function App() {
 
       {appView.view === "live" ? (
         <LiveCaptureView
-          backendOnline={backendOnline}
+          backendOnline={captureReady}
           connection={backendConnection}
           capture={audioCapture}
         />

@@ -2,8 +2,10 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-BACKEND_ROOT = Path(__file__).resolve().parents[1]
-REPO_ROOT = BACKEND_ROOT.parents[1]
+from app.paths import backend_root, repo_root
+
+BACKEND_ROOT = backend_root()
+REPO_ROOT = repo_root()
 
 
 def _resolve_env_files() -> tuple[str, ...]:

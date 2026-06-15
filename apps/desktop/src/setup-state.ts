@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { app } from "electron";
 
+import { resolveBackendDir } from "./backend-process";
 import type { SetupProgressEvent, SetupSnapshot } from "./electron-api.types";
 import { getWhisperModelDir } from "./env";
 
@@ -16,8 +18,8 @@ export function setSetupSnapshot(next: SetupSnapshot): void {
   snapshot = next;
 }
 
-export function initializeSetupSnapshot(backendDir: string, runOnStart: boolean): SetupSnapshot {
-  if (isModelSetupComplete(backendDir)) {
+export function initializeSetupSnapshot(runOnStart: boolean): SetupSnapshot {
+  if (isModelSetupComplete()) {
     const next: SetupSnapshot = { status: "skipped", reason: "already-complete" };
     setSetupSnapshot(next);
     return next;
@@ -37,17 +39,18 @@ export function initializeSetupSnapshot(backendDir: string, runOnStart: boolean)
   return { status: "idle" };
 }
 
-export function resolveSetupMarkerPath(backendDir: string): string {
+export function resolveSetupMarkerPath(): string {
   const whisperModelDir = getWhisperModelDir();
+  const baseDir = app.isPackaged ? app.getPath("userData") : resolveBackendDir();
   const modelPath = path.isAbsolute(whisperModelDir)
     ? whisperModelDir
-    : path.join(backendDir, whisperModelDir);
+    : path.join(baseDir, whisperModelDir);
 
   return path.join(modelPath, ".setup-complete");
 }
 
-export function isModelSetupComplete(backendDir: string): boolean {
-  return fs.existsSync(resolveSetupMarkerPath(backendDir));
+export function isModelSetupComplete(): boolean {
+  return fs.existsSync(resolveSetupMarkerPath());
 }
 
 export function applySetupProgress(event: SetupProgressEvent): void {
