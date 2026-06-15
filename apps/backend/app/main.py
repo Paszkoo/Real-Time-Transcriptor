@@ -5,8 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.constants import BACKEND_VERSION
-from app.error_handlers import audio_error_handler
+from app.error_handlers import domain_error_handler
 from app.modules.audio.errors import AudioError
+from app.modules.transcription.errors import TranscriptionError
 from app.routes.audio import router as audio_router
 from app.routes.health import router as health_router
 
@@ -16,7 +17,8 @@ def create_app() -> FastAPI:
         logging.basicConfig(level=logging.INFO)
 
     app = FastAPI(title="Real-Time Transcriptor API", version=BACKEND_VERSION)
-    app.add_exception_handler(AudioError, audio_error_handler)
+    app.add_exception_handler(AudioError, domain_error_handler)
+    app.add_exception_handler(TranscriptionError, domain_error_handler)
 
     app.add_middleware(
         CORSMiddleware,

@@ -7,14 +7,14 @@ import re
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
 import httpx
 from tqdm import tqdm
 
-from app.config import settings
+from app.config import resolve_whisper_model_dir, settings
+from app.modules.transcription.errors import TranscriptionError
 
-SETUP_MARKER = Path(settings.whisper_model_dir) / ".setup-complete"
+SETUP_MARKER = resolve_whisper_model_dir() / ".setup-complete"
 OLLAMA_PROGRESS = re.compile(r"(\d+)%")
 
 
@@ -105,27 +105,23 @@ def pull_ollama_model(tags: dict) -> None:
 
 def download_whisper_model() -> None:
     print_step(f"Ensuring Whisper model '{settings.whisper_model_name}' is cached")
-    model_dir = Path(settings.whisper_model_dir)
+    model_dir = resolve_whisper_model_dir()
     model_dir.mkdir(parents=True, exist_ok=True)
 
-    try:
-        import whisper
-    except ImportError as exc:
-        fail(
-            "openai-whisper is not installed. "
-            'Run `pip install -e ".[models]"` first. '
-            f"Details: {exc}",
-        )
+    from app.modules.transcription.whisper_service import whisper_service
 
     print("Downloading Whisper weights if missing…")
-    with tqdm(total=100, desc="Whisper setup", unit="%") as progress:
-        progress.set_description("Whisper setup — preparing")
-        progress.update(15)
-        whisper.load_model(settings.whisper_model_name, download_root=str(model_dir))
-        progress.set_description("Whisper setup — complete")
-        progress.update(85)
+    try:
+        with tqdm(total=100, desc="Whisper setup", unit="%") as progress:
+            progress.set_description("Whisper setup — preparing")
+            progress.update(15)
+            whisper_service.ensure_loaded()
+            progress.set_description("Whisper setup — complete")
+            progress.update(85)
+    except TranscriptionError as exc:
+        fail(f"Whisper setup failed: {exc.message}")
 
-    print(f"Whisper model ready in {model_dir.resolve()}.")
+    print(f"Whisper model ready in {model_dir}.")
 
 
 def main() -> None:

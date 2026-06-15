@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     backend_host: str = "127.0.0.1"
     backend_port: int = 8765
-    whisper_model_name: str = "base"
+    whisper_model_name: str = "large-v3-turbo"
     whisper_model_dir: str = "./models/whisper"
     ollama_host: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen3:4b"
@@ -40,3 +40,10 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def resolve_whisper_model_dir() -> Path:
+    path = Path(settings.whisper_model_dir)
+    if path.is_absolute():
+        return path
+    return (BACKEND_ROOT / path).resolve()

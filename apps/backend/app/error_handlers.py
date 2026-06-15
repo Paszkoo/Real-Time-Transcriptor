@@ -2,6 +2,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from app.modules.audio.errors import AudioError
+from app.modules.transcription.errors import TranscriptionError
 
 ERROR_STATUS_CODES: dict[str, int] = {
     "device_not_found": 404,
@@ -14,10 +15,16 @@ ERROR_STATUS_CODES: dict[str, int] = {
     "file_not_found": 404,
     "invalid_file_path": 400,
     "audio_decode_failed": 422,
+    "whisper_not_installed": 503,
+    "whisper_load_failed": 503,
+    "transcription_error": 500,
 }
 
 
-async def audio_error_handler(_request: Request, error: AudioError) -> JSONResponse:
+async def domain_error_handler(
+    _request: Request,
+    error: AudioError | TranscriptionError,
+) -> JSONResponse:
     status_code = ERROR_STATUS_CODES.get(error.code, 400)
     return JSONResponse(
         status_code=status_code,

@@ -1,6 +1,6 @@
 # Real-Time Transcriptor
 
-OpenAI Whisper–based desktop transcriptor with a local FastAPI backend and Electron UI.
+Whisper-based desktop transcriptor (faster-whisper) with a local FastAPI backend and Electron UI.
 
 ## Prerequisites
 
@@ -69,7 +69,7 @@ cd apps/backend
 python setup.py
 ```
 
-This verifies Ollama, pulls `qwen3:4b`, and caches the Whisper `base` model with CLI progress bars (tqdm). Re-runs are skipped automatically via a setup marker file.
+This verifies Ollama, pulls `qwen3:4b`, and caches the Whisper `large-v3-turbo` model (via faster-whisper) with CLI progress bars (tqdm). Re-runs are skipped automatically via a setup marker file.
 
 Requires model extras first: `pip install -e ".[models]"` in `apps/backend`.
 
