@@ -24,9 +24,15 @@ def test_capture_status_defaults() -> None:
     assert response.status_code == 200
     assert response.json() == {
         "is_capturing": False,
+        "is_paused": False,
         "device_id": None,
         "device_name": None,
         "source_type": "microphone",
+        "session_id": None,
+        "started_at": None,
+        "elapsed_ms": 0,
+        "audio_level": 0.0,
+        "vad_active": False,
         "chunks_emitted": 0,
         "chunks_filtered": 0,
         "queue_size": 0,

@@ -26,12 +26,22 @@ export type CaptureSourceType = "microphone" | "file";
 
 export interface CaptureStatusResponse {
   is_capturing: boolean;
+  is_paused: boolean;
   device_id: number | null;
   device_name: string | null;
   source_type: CaptureSourceType;
+  session_id: string | null;
+  started_at: string | null;
+  elapsed_ms: number;
+  audio_level: number;
+  vad_active: boolean;
   chunks_emitted: number;
   chunks_filtered: number;
   queue_size: number;
+}
+
+export interface UpdateSpeakerRequest {
+  label: string;
 }
 
 export interface ApiErrorResponse {
@@ -54,6 +64,18 @@ export interface TranscriptSegment {
   end_ms: number;
   sequence: number;
 }
+
+export interface LiveTranscriptSegment extends TranscriptSegment {
+  is_final: boolean;
+  confidence: number | null;
+  alternatives: string[];
+}
+
+export type TranscriptStreamEvent =
+  | { type: "segment"; segment: LiveTranscriptSegment }
+  | { type: "speaker_updated"; speaker: Speaker }
+  | { type: "closed" }
+  | { type: "error"; code: string; message: string };
 
 export interface SessionArtifact {
   artifact_type: string;

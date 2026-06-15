@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.config import settings
 from app.db.models import JobRow, SegmentRow, SessionRow, SpeakerRow
-from app.modules.sessions.errors import SessionNotFoundError
+from app.modules.sessions.errors import SessionError, SessionNotFoundError
 from app.modules.sessions.fts import index_segment, remove_session_index, search_session_ids
 
 PREVIEW_MAX_LEN = 200
@@ -189,6 +189,31 @@ class SessionService:
         ).all()
         row_by_id = {row.id: row for row in rows}
         return [row_by_id[session_id] for session_id in session_ids if session_id in row_by_id]
+
+    def update_speaker_label(
+        self,
+        db: Session,
+        *,
+        session_id: str,
+        speaker_id: str,
+        label: str,
+    ) -> SpeakerRow:
+        session_row = db.get(SessionRow, session_id)
+        if session_row is None:
+            raise SessionNotFoundError(f"Session '{session_id}' was not found.")
+
+        speaker_row = db.get(SpeakerRow, speaker_id)
+        if speaker_row is None or speaker_row.session_id != session_id:
+            raise SessionNotFoundError(f"Speaker '{speaker_id}' was not found.")
+
+        normalized = label.strip()
+        if not normalized:
+            raise SessionError("Speaker label cannot be empty.")
+
+        speaker_row.label = normalized
+        db.commit()
+        db.refresh(speaker_row)
+        return speaker_row
 
 
 session_service = SessionService()

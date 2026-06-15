@@ -24,6 +24,14 @@ export function getBackendBaseUrl(connection: BackendConnection): string {
   return `http://${connection.host}:${connection.port}`;
 }
 
+export function getWebSocketUrl(connection: BackendConnection, path: string): string {
+  const baseUrl = getBackendBaseUrl(connection);
+  const wsBase = baseUrl.startsWith("https://")
+    ? baseUrl.replace(/^https:/, "wss:")
+    : baseUrl.replace(/^http:/, "ws:");
+  return `${wsBase}${path}`;
+}
+
 export async function fetchBackendJson<T>(
   connection: BackendConnection,
   path: string,
@@ -89,6 +97,18 @@ export async function startCapture(connection: BackendConnection, deviceId: numb
 
 export async function stopCapture(connection: BackendConnection) {
   return fetchBackendJson<CaptureStatusResponse>(connection, "/api/capture/stop", {
+    method: "POST",
+  });
+}
+
+export async function pauseCapture(connection: BackendConnection) {
+  return fetchBackendJson<CaptureStatusResponse>(connection, "/api/capture/pause", {
+    method: "POST",
+  });
+}
+
+export async function resumeCapture(connection: BackendConnection) {
+  return fetchBackendJson<CaptureStatusResponse>(connection, "/api/capture/resume", {
     method: "POST",
   });
 }

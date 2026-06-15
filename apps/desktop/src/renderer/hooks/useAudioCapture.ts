@@ -8,10 +8,17 @@ import { useCallback, useEffect, useState } from "react";
 import {
   fetchCaptureStatus,
   fetchDevices,
+  pauseCapture,
   resolveBackendConnection,
+  resumeCapture,
   startCapture,
   stopCapture,
+  type BackendConnection,
 } from "../lib/backendApi";
+
+type CaptureActionResult =
+  | { ok: true; data: CaptureStatusResponse }
+  | { ok: false; error: { message: string } | null };
 
 export function useAudioCapture(backendOnline: boolean) {
   const [devices, setDevices] = useState<AudioDevice[]>([]);
@@ -105,44 +112,56 @@ export function useAudioCapture(backendOnline: boolean) {
     };
   }, [backendOnline, captureStatus?.is_capturing, refreshCaptureStatus]);
 
+  const runCaptureAction = useCallback(
+    async (
+      action: (connection: BackendConnection) => Promise<CaptureActionResult>,
+      errorMessage: string,
+    ): Promise<boolean> => {
+      setIsSubmitting(true);
+      setError(null);
+
+      const connection = await resolveBackendConnection();
+      const result = await action(connection);
+
+      setIsSubmitting(false);
+
+      if (!result.ok) {
+        setError(result.error?.message ?? errorMessage);
+        return false;
+      }
+
+      setCaptureStatus(result.data);
+      return true;
+    },
+    [],
+  );
+
   const handleStartCapture = useCallback(async () => {
     if (selectedDeviceId === null) {
       setError("Select a microphone before starting capture.");
       return;
     }
 
-    setIsSubmitting(true);
-    setError(null);
+    await runCaptureAction(
+      (connection) => startCapture(connection, selectedDeviceId),
+      "Could not start audio capture.",
+    );
+  }, [runCaptureAction, selectedDeviceId]);
 
-    const connection = await resolveBackendConnection();
-    const result = await startCapture(connection, selectedDeviceId);
+  const handlePauseCapture = useCallback(
+    () => runCaptureAction(pauseCapture, "Could not pause audio capture."),
+    [runCaptureAction],
+  );
 
-    setIsSubmitting(false);
+  const handleResumeCapture = useCallback(
+    () => runCaptureAction(resumeCapture, "Could not resume audio capture."),
+    [runCaptureAction],
+  );
 
-    if (!result.ok) {
-      setError(result.error?.message ?? "Could not start audio capture.");
-      return;
-    }
-
-    setCaptureStatus(result.data);
-  }, [selectedDeviceId]);
-
-  const handleStopCapture = useCallback(async () => {
-    setIsSubmitting(true);
-    setError(null);
-
-    const connection = await resolveBackendConnection();
-    const result = await stopCapture(connection);
-
-    setIsSubmitting(false);
-
-    if (!result.ok) {
-      setError(result.error?.message ?? "Could not stop audio capture.");
-      return;
-    }
-
-    setCaptureStatus(result.data);
-  }, []);
+  const handleStopCapture = useCallback(
+    () => runCaptureAction(stopCapture, "Could not stop audio capture."),
+    [runCaptureAction],
+  );
 
   return {
     devices,
@@ -154,6 +173,8 @@ export function useAudioCapture(backendOnline: boolean) {
     error,
     refreshDevices,
     handleStartCapture,
+    handlePauseCapture,
+    handleResumeCapture,
     handleStopCapture,
   };
 }

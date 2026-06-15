@@ -9,6 +9,7 @@ from rtt_shared.sessions import (
     SessionsListResponse,
     SessionSummaryResponse,
     SpeakerResponse,
+    UpdateSpeakerRequest,
 )
 from sqlalchemy.orm import Session
 
@@ -17,6 +18,7 @@ from app.db.engine import get_db
 from app.db.models import SessionRow
 from app.modules.llm.service import llm_service
 from app.modules.sessions.service import session_service
+from app.modules.sessions.transcript_stream import transcript_stream_manager
 
 router = APIRouter(prefix="/api", tags=["sessions"])
 
@@ -98,6 +100,30 @@ def search_sessions(
 def get_session(session_id: str, db: Session = Depends(get_db)) -> SessionDetailResponse:
     session_row = session_service.get_by_id(db, session_id)
     return _to_detail(session_row, db)
+
+
+@router.patch("/sessions/{session_id}/speakers/{speaker_id}", response_model=SpeakerResponse)
+async def update_speaker_label(
+    session_id: str,
+    speaker_id: str,
+    body: UpdateSpeakerRequest,
+    db: Session = Depends(get_db),
+) -> SpeakerResponse:
+    speaker_row = session_service.update_speaker_label(
+        db,
+        session_id=session_id,
+        speaker_id=speaker_id,
+        label=body.label,
+    )
+    await transcript_stream_manager.broadcast_speaker_updated(
+        session_id=session_id,
+        speaker=speaker_row,
+    )
+    return SpeakerResponse(
+        id=speaker_row.id,
+        label=speaker_row.label,
+        sort_order=speaker_row.sort_order,
+    )
 
 
 @router.delete("/sessions/{session_id}", status_code=204)

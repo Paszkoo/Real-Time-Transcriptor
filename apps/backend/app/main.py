@@ -19,6 +19,7 @@ from app.routes.llm import router as llm_router
 from app.routes.llm import ws_router as llm_ws_router
 from app.routes.sessions import router as sessions_router
 from app.routes.settings import router as settings_router
+from app.routes.transcript import ws_router as transcript_ws_router
 
 
 @asynccontextmanager
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
     app.include_router(settings_router)
     app.include_router(llm_router)
     app.include_router(llm_ws_router)
+    app.include_router(transcript_ws_router)
 
     @app.get("/")
     def root() -> dict[str, str]:

@@ -24,9 +24,15 @@ class CaptureStartFileRequest(BaseModel):
 
 class CaptureStatusResponse(BaseModel):
     is_capturing: bool
+    is_paused: bool = False
     device_id: int | None = None
     device_name: str | None = None
     source_type: Literal["microphone", "file"] = "microphone"
+    session_id: str | None = None
+    started_at: str | None = None
+    elapsed_ms: int = 0
+    audio_level: float = 0.0
+    vad_active: bool = False
     chunks_emitted: int = 0
     chunks_filtered: int = 0
     queue_size: int = 0

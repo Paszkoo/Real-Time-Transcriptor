@@ -26,6 +26,14 @@ class CaptureNotRunningError(AudioError):
     code = "capture_not_running"
 
 
+class CapturePausedError(AudioError):
+    code = "capture_paused"
+
+
+class CaptureNotPausedError(AudioError):
+    code = "capture_not_paused"
+
+
 class FfmpegNotFoundError(AudioError):
     code = "ffmpeg_not_found"
 

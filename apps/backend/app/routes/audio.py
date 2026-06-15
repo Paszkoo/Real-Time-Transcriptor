@@ -25,6 +25,10 @@ def _to_device_response(device: AudioDeviceInfo) -> AudioDeviceResponse:
     )
 
 
+def _with_session_context(status: CaptureStatusResponse) -> CaptureStatusResponse:
+    return recording_coordinator.enrich_capture_status(status)
+
+
 async def _start_with_recording_session(
     start_capture: Callable[[], Awaitable[CaptureStatusResponse]],
 ) -> CaptureStatusResponse:
@@ -37,7 +41,7 @@ async def _start_with_recording_session(
     except Exception:
         await capture_service.stop()
         raise
-    return status
+    return _with_session_context(status)
 
 
 @router.get("/devices", response_model=DevicesListResponse)
@@ -60,13 +64,25 @@ async def start_file_capture(body: CaptureStartFileRequest) -> CaptureStatusResp
     )
 
 
+@router.post("/capture/pause", response_model=CaptureStatusResponse)
+async def pause_capture() -> CaptureStatusResponse:
+    status = await capture_service.pause()
+    return _with_session_context(status)
+
+
+@router.post("/capture/resume", response_model=CaptureStatusResponse)
+async def resume_capture() -> CaptureStatusResponse:
+    status = await capture_service.resume()
+    return _with_session_context(status)
+
+
 @router.post("/capture/stop", response_model=CaptureStatusResponse)
 async def stop_capture() -> CaptureStatusResponse:
     status = await capture_service.stop()
     await recording_coordinator.on_capture_stopped()
-    return status
+    return _with_session_context(status)
 
 
 @router.get("/capture/status", response_model=CaptureStatusResponse)
 def capture_status() -> CaptureStatusResponse:
-    return capture_service.get_status()
+    return _with_session_context(capture_service.get_status())

@@ -20,6 +20,10 @@ class SegmentResponse(BaseModel):
     sequence: int
 
 
+class UpdateSpeakerRequest(BaseModel):
+    label: str
+
+
 class SessionArtifactResponse(BaseModel):
     artifact_type: str
     content: str

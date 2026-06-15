@@ -7,7 +7,7 @@ import {
 
 import {
   fetchBackendJson,
-  getBackendBaseUrl,
+  getWebSocketUrl,
   type BackendConnection,
 } from "./backendApi";
 
@@ -52,11 +52,7 @@ export async function startSessionProcessing(
 }
 
 export function getLlmWebSocketUrl(connection: BackendConnection, jobId: string) {
-  const baseUrl = getBackendBaseUrl(connection);
-  const wsBase = baseUrl.startsWith("https://")
-    ? baseUrl.replace(/^https:/, "wss:")
-    : baseUrl.replace(/^http:/, "ws:");
-  return `${wsBase}/ws/llm/${jobId}`;
+  return getWebSocketUrl(connection, `/ws/llm/${jobId}`);
 }
 
 export function connectLlmStream(

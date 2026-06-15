@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { AudioCapturePanel } from "./components/AudioCapturePanel";
+import { LiveCaptureView } from "./components/LiveCaptureView";
 import { SessionDetailView } from "./components/SessionDetailView";
 import { SessionHistoryPanel } from "./components/SessionHistoryPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
@@ -129,7 +129,11 @@ export function App() {
       ) : null}
 
       {appView.view === "live" ? (
-        <AudioCapturePanel backendOnline={backendOnline} capture={audioCapture} />
+        <LiveCaptureView
+          backendOnline={backendOnline}
+          connection={backendConnection}
+          capture={audioCapture}
+        />
       ) : null}
 
       {appView.view === "history" ? (

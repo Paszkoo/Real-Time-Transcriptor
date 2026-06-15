@@ -18,6 +18,7 @@ from rtt_shared.sessions import (
     SessionSummaryResponse,
     SessionsListResponse,
     SpeakerResponse,
+    UpdateSpeakerRequest,
 )
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "SessionSummaryResponse",
     "SessionsListResponse",
     "SpeakerResponse",
+    "UpdateSpeakerRequest",
 ]

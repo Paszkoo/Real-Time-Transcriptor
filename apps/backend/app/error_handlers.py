@@ -12,6 +12,8 @@ ERROR_STATUS_CODES: dict[str, int] = {
     "microphone_permission_denied": 403,
     "capture_already_running": 409,
     "capture_not_running": 409,
+    "capture_paused": 409,
+    "capture_not_paused": 409,
     "ffmpeg_not_found": 503,
     "unsupported_audio_format": 400,
     "file_not_found": 404,
