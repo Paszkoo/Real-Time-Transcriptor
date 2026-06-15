@@ -39,6 +39,9 @@ export async function fetchBackendJson<T>(
     });
 
     if (response.ok) {
+      if (response.status === 204) {
+        return { ok: true, data: undefined as T };
+      }
       return { ok: true, data: (await response.json()) as T };
     }
 

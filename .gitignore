@@ -154,6 +154,7 @@ venv/
 # Models & local data
 models/
 apps/backend/models/
+apps/backend/data/
 
 # Electron Forge
 out/

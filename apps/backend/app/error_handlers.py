@@ -2,6 +2,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from app.modules.audio.errors import AudioError
+from app.modules.sessions.errors import SessionError
 from app.modules.transcription.errors import TranscriptionError
 
 ERROR_STATUS_CODES: dict[str, int] = {
@@ -18,12 +19,15 @@ ERROR_STATUS_CODES: dict[str, int] = {
     "whisper_not_installed": 503,
     "whisper_load_failed": 503,
     "transcription_error": 500,
+    "session_not_found": 404,
+    "session_already_active": 409,
+    "session_error": 400,
 }
 
 
 async def domain_error_handler(
     _request: Request,
-    error: AudioError | TranscriptionError,
+    error: AudioError | TranscriptionError | SessionError,
 ) -> JSONResponse:
     status_code = ERROR_STATUS_CODES.get(error.code, 400)
     return JSONResponse(

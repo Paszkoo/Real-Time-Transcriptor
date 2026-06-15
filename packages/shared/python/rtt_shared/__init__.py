@@ -7,6 +7,15 @@ from rtt_shared.audio import (
     ErrorResponse,
 )
 from rtt_shared.health import HealthResponse
+from rtt_shared.sessions import (
+    AppSettingsResponse,
+    AppSettingsUpdateRequest,
+    SegmentResponse,
+    SessionDetailResponse,
+    SessionSummaryResponse,
+    SessionsListResponse,
+    SpeakerResponse,
+)
 
 __all__ = [
     "AudioDeviceResponse",
@@ -16,4 +25,11 @@ __all__ = [
     "DevicesListResponse",
     "ErrorResponse",
     "HealthResponse",
+    "AppSettingsResponse",
+    "AppSettingsUpdateRequest",
+    "SegmentResponse",
+    "SessionDetailResponse",
+    "SessionSummaryResponse",
+    "SessionsListResponse",
+    "SpeakerResponse",
 ]

@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     ffmpeg_path: str = "ffmpeg"
     audio_chunk_queue_maxsize: int = 32
     audio_file_roots: str = ""
+    session_data_dir: str = "./data"
+    save_session_audio: bool = False
+    session_list_limit: int = 100
 
 
 settings = Settings()
@@ -47,3 +50,14 @@ def resolve_whisper_model_dir() -> Path:
     if path.is_absolute():
         return path
     return (BACKEND_ROOT / path).resolve()
+
+
+def resolve_session_data_dir() -> Path:
+    path = Path(settings.session_data_dir)
+    if path.is_absolute():
+        return path
+    return (BACKEND_ROOT / path).resolve()
+
+
+def resolve_session_audio_dir() -> Path:
+    return resolve_session_data_dir() / "audio"
