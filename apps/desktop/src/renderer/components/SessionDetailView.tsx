@@ -1,6 +1,7 @@
 import type { SessionDetail } from "@real-time-transcriptor/shared";
 import { useEffect, useRef, useState } from "react";
 
+import { SessionInsightsPanel } from "./SessionInsightsPanel";
 import { type BackendConnection } from "../lib/backendApi";
 import { formatMsAsTimestamp } from "../lib/format";
 import { getSessionAudioUrl } from "../lib/sessionsApi";
@@ -9,9 +10,15 @@ interface SessionDetailViewProps {
   session: SessionDetail;
   connection: BackendConnection;
   onBack: () => void;
+  onArtifactsUpdated: () => void;
 }
 
-export function SessionDetailView({ session, connection, onBack }: SessionDetailViewProps) {
+export function SessionDetailView({
+  session,
+  connection,
+  onBack,
+  onArtifactsUpdated,
+}: SessionDetailViewProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
   const audioUrl = session.audio_url ? getSessionAudioUrl(connection, session.audio_url) : null;
@@ -68,6 +75,12 @@ export function SessionDetailView({ session, connection, onBack }: SessionDetail
           Audio playback is unavailable. Enable “Save session audio” in settings before recording.
         </p>
       )}
+
+      <SessionInsightsPanel
+        session={session}
+        connection={connection}
+        onArtifactsUpdated={onArtifactsUpdated}
+      />
 
       <div className="mt-5 space-y-4">
         {session.segments.length === 0 ? (

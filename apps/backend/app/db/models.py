@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -29,6 +29,9 @@ class SessionRow(Base):
         back_populates="session", cascade="all, delete-orphan"
     )
     jobs: Mapped[list["JobRow"]] = relationship(
+        back_populates="session", cascade="all, delete-orphan"
+    )
+    artifacts: Mapped[list["SessionArtifactRow"]] = relationship(
         back_populates="session", cascade="all, delete-orphan"
     )
 
@@ -84,3 +87,25 @@ class JobRow(Base):
     )
 
     session: Mapped[SessionRow] = relationship(back_populates="jobs")
+
+
+class SessionArtifactRow(Base):
+    __tablename__ = "session_artifacts"
+    __table_args__ = (
+        UniqueConstraint("session_id", "artifact_type", name="uq_session_artifact_type"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    session_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False
+    )
+    artifact_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    session: Mapped[SessionRow] = relationship(back_populates="artifacts")

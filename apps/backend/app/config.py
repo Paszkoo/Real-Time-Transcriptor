@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     whisper_model_dir: str = "./models/whisper"
     ollama_host: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen3:4b"
+    ollama_request_timeout_s: float = 120.0
+    llm_max_transcript_chars: int = 32_000
     device: str = "cpu"
     audio_sample_rate: int = 16000
     audio_chunk_duration_s: float = 30.0

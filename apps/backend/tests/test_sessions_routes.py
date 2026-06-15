@@ -59,6 +59,7 @@ def test_get_session_detail(session_client) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "closed"
+    assert payload["artifacts"] == []
     assert len(payload["segments"]) == 1
     assert payload["segments"][0]["speaker_label"] == "Speaker 1"
     assert payload["segments"][0]["text"] == "Project kickoff meeting notes"

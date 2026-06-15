@@ -9,11 +9,14 @@ from app.constants import BACKEND_VERSION
 from app.db.engine import run_migrations
 from app.error_handlers import domain_error_handler
 from app.modules.audio.errors import AudioError
+from app.modules.llm.errors import LlmError
 from app.modules.sessions.errors import SessionError
 from app.modules.settings.store import load_runtime_settings
 from app.modules.transcription.errors import TranscriptionError
 from app.routes.audio import router as audio_router
 from app.routes.health import router as health_router
+from app.routes.llm import router as llm_router
+from app.routes.llm import ws_router as llm_ws_router
 from app.routes.sessions import router as sessions_router
 from app.routes.settings import router as settings_router
 
@@ -33,6 +36,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(AudioError, domain_error_handler)
     app.add_exception_handler(TranscriptionError, domain_error_handler)
     app.add_exception_handler(SessionError, domain_error_handler)
+    app.add_exception_handler(LlmError, domain_error_handler)
 
     app.add_middleware(
         CORSMiddleware,
@@ -46,6 +50,8 @@ def create_app() -> FastAPI:
     app.include_router(audio_router)
     app.include_router(sessions_router)
     app.include_router(settings_router)
+    app.include_router(llm_router)
+    app.include_router(llm_ws_router)
 
     @app.get("/")
     def root() -> dict[str, str]:

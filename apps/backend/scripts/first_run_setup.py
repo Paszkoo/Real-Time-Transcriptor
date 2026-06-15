@@ -12,6 +12,7 @@ import httpx
 from tqdm import tqdm
 
 from app.config import resolve_whisper_model_dir, settings
+from app.modules.llm.client import is_ollama_model_available
 from app.modules.transcription.errors import TranscriptionError
 
 SETUP_MARKER = resolve_whisper_model_dir() / ".setup-complete"
@@ -63,11 +64,6 @@ def ensure_ollama_running() -> dict:
         )
     print("Ollama service is reachable.")
     return tags
-
-
-def is_ollama_model_available(model_name: str, tags: dict) -> bool:
-    available = {model.get("name", "") for model in tags.get("models", [])}
-    return model_name in available or f"{model_name}:latest" in available
 
 
 def pull_ollama_model(tags: dict) -> None:

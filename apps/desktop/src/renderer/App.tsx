@@ -150,6 +150,7 @@ export function App() {
           session={sessionDetail.session}
           connection={backendConnection}
           onBack={appView.closeSessionView}
+          onArtifactsUpdated={() => void sessionDetail.refreshSession()}
         />
       ) : null}
 

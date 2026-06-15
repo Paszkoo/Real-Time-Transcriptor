@@ -55,6 +55,24 @@ export interface TranscriptSegment {
   sequence: number;
 }
 
+export interface SessionArtifact {
+  artifact_type: string;
+  content: string;
+  updated_at: string;
+}
+
+export type LlmTask = "correct" | "summarize" | "extract_todos";
+export type SummaryFormat = "bullets" | "narrative";
+
+export interface ProcessSessionRequest {
+  task: LlmTask;
+  format?: SummaryFormat;
+}
+
+export interface ProcessSessionResponse {
+  job_id: string;
+}
+
 export interface SessionSummary {
   id: string;
   title: string | null;
@@ -72,6 +90,7 @@ export interface SessionDetail extends SessionSummary {
   audio_url: string | null;
   speakers: Speaker[];
   segments: TranscriptSegment[];
+  artifacts: SessionArtifact[];
 }
 
 export interface SessionsListResponse {

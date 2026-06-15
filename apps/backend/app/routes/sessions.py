@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 from rtt_shared.sessions import (
     SegmentResponse,
+    SessionArtifactResponse,
     SessionDetailResponse,
     SessionsListResponse,
     SessionSummaryResponse,
@@ -14,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.db.engine import get_db
 from app.db.models import SessionRow
+from app.modules.llm.service import llm_service
 from app.modules.sessions.service import session_service
 
 router = APIRouter(prefix="/api", tags=["sessions"])
@@ -40,10 +42,11 @@ def _to_list_response(session_rows: list[SessionRow]) -> SessionsListResponse:
     )
 
 
-def _to_detail(session_row: SessionRow) -> SessionDetailResponse:
+def _to_detail(session_row: SessionRow, db: Session) -> SessionDetailResponse:
     speakers = sorted(session_row.speakers, key=lambda speaker: speaker.sort_order)
     speaker_labels = {speaker.id: speaker.label for speaker in speakers}
     segments = sorted(session_row.segments, key=lambda segment: segment.sequence)
+    artifacts = llm_service.list_artifacts(db, session_row.id)
 
     return SessionDetailResponse(
         **_to_summary(session_row).model_dump(),
@@ -64,6 +67,14 @@ def _to_detail(session_row: SessionRow) -> SessionDetailResponse:
                 sequence=segment.sequence,
             )
             for segment in segments
+        ],
+        artifacts=[
+            SessionArtifactResponse(
+                artifact_type=artifact.artifact_type,
+                content=artifact.content,
+                updated_at=artifact.updated_at,
+            )
+            for artifact in artifacts
         ],
     )
 
@@ -86,7 +97,7 @@ def search_sessions(
 @router.get("/sessions/{session_id}", response_model=SessionDetailResponse)
 def get_session(session_id: str, db: Session = Depends(get_db)) -> SessionDetailResponse:
     session_row = session_service.get_by_id(db, session_id)
-    return _to_detail(session_row)
+    return _to_detail(session_row, db)
 
 
 @router.delete("/sessions/{session_id}", status_code=204)

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -19,6 +20,21 @@ class SegmentResponse(BaseModel):
     sequence: int
 
 
+class SessionArtifactResponse(BaseModel):
+    artifact_type: str
+    content: str
+    updated_at: datetime
+
+
+class ProcessSessionResponse(BaseModel):
+    job_id: str
+
+
+class ProcessSessionRequest(BaseModel):
+    task: Literal["correct", "summarize", "extract_todos"]
+    format: Literal["bullets", "narrative"] = "bullets"
+
+
 class SessionSummaryResponse(BaseModel):
     id: str
     title: str | None
@@ -36,6 +52,7 @@ class SessionDetailResponse(SessionSummaryResponse):
     audio_url: str | None
     speakers: list[SpeakerResponse]
     segments: list[SegmentResponse]
+    artifacts: list[SessionArtifactResponse]
 
 
 class SessionsListResponse(BaseModel):
