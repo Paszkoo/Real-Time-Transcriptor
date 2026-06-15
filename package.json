@@ -1,0 +1,27 @@
+{
+  "name": "real-time-transcriptor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenAI Whisper based transcriptor with user friendly interface",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@real-time-transcriptor/desktop",
+    "lint": "npm run lint --workspace=@real-time-transcriptor/desktop && npm run lint:python",
+    "lint:python": "node scripts/lint-python.mjs",
+    "format": "npm run format --workspace=@real-time-transcriptor/desktop && node scripts/lint-python.mjs format apps/backend",
+    "setup:models": "node scripts/run-setup.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "typescript-eslint": "^8.19.0",
+    "eslint-plugin-react-hooks": "^5.1.0"
+  }
+}

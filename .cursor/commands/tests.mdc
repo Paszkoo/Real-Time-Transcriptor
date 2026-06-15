@@ -1,0 +1,159 @@
+---
+description: Strategia testów PrintLab — Vitest (unit + integracja), coverage, CI, Playwright E2E
+globs: **/*.test.js,**/*.spec.js,src/test-utils/**,e2e/**,vitest.config.*
+alwaysApply: false
+---
+
+# Testing (PrintLab)
+
+Warstwy: **unit** + **integracja** + **coverage** + **smoke migracji** + **build/lint** + **E2E (Playwright, smoke)**.
+
+Stack: **JavaScript only** — pliki `.js`, nie TypeScript.
+
+Pełna dokumentacja dla ludzi: `docs/testing.md`. Bezpieczeństwo API: `docs/security-api.md`.
+
+## Skrypty
+
+| Skrypt | Opis |
+|--------|------|
+| `pnpm test:unit` | Tylko unit (bez DB) |
+| `pnpm test:integration` | Tylko integracja (wymaga `printlab_test`) |
+| `pnpm test` | Unit + integracja |
+| `pnpm test:coverage` | Oba projekty + progi v8 (`vitest.config.js`) |
+| `pnpm test:e2e` | Playwright (`e2e/flows/*.spec.js`) |
+| `pnpm check:api-auth` | Audyt auth na route'ach API |
+
+**Lokalnie (integracja):** `pnpm docker:up` → `pnpm test:db:setup` → `.env.test` z `TEST_DATABASE_URL` → opcjonalnie `INTEGRATION_MAX_WORKERS=4` → `pnpm test:integration`.
+
+**Pre-push hook:** `lint` + `check:api-auth` + `test:unit`. Coverage i integracja — w CI.
+
+## CI (`.github/workflows/test.yml`)
+
+| Job | Co robi |
+|-----|---------|
+| `quality` | format, lint, `check:api-auth`, build |
+| `unit` | `pnpm test:unit` |
+| `integration` | `pnpm test:coverage` + artifact HTML |
+| `migrations-smoke` | tylko gdy zmiany w `prisma/` (validate, deploy, migrate diff) |
+| `e2e-smoke` | Playwright (`continue-on-error: true`) |
+
+## Coverage (Vitest v8)
+
+- Scope: `src/lib/**/*.js` + `src/app/api/**/route.js` (bez `legal/`, `i18n/`, test-utils).
+- Progi globalne (~55/50/45%) w `vitest.config.js` — ratchet w górę, bez per-file.
+- Wykluczone z coverage: `*.test.js`, `scripts/**`, config.
+
+## Unit (Vitest)
+
+Lokalizacja: `src/lib/__tests__/<name>.unit.test.js`
+
+Priorytet: `pricing`, `validation`, `subscription`, `export`, `money`, `pagination`, `octoprint-*`, `rate-limit`, `api-utils` (parseId/pick — bez DB), `models` (formattery).
+
+Zasady:
+
+- Bez DB, sieci, zewnętrznych serwisów — czyste funkcje
+- Mock zależności tylko gdy moduł ich wymaga
+- Logika z Prismą (`assertOwnedResource`, `password-reset`, `token-version`) → **integracja** w `src/lib/__tests__/*.integration.test.js`
+
+Pomiń: pass-through CRUD → testuj przez integrację API.
+
+## Integracja (Vitest)
+
+Lokalizacja: `src/app/api/<resource>/__tests__/<name>.integration.test.js`
+
+Zasady:
+
+- Handlery route — nie komponenty React
+- Prawdziwa DB PostgreSQL; worker `printlab_test_<n>`; migracje w Vitest `globalSetup`
+- Izolacja: `resetTestDb()` raz na plik (`beforeAll`); ciężkie pliki marketplace/stripe mogą resetować per `beforeEach`
+- **Bez mocka Prismy**
+- Nazewnictwo: `*.integration.test.js`
+
+### Multi-tenant (twarda asercja)
+
+Każdy route `:id` / owned:
+
+1. Happy path własnego rekordu
+2. `parseId('abc')` → **400**
+3. Cudzy rekord → **403 lub 404** (zgodnie z faktycznym handlerem, nie wymuszaj jednego kodu)
+4. Brak sesji → **401** (gdy chroniony)
+
+`assertOwnedResource` zwraca **403**; wiele route'ów używa `findFirst` + **404** — test odzwierciedla kod.
+
+### Auth w integracji
+
+- Domyślnie: mock `@/lib/auth` (`requireAuth`) przez `setupFiles` (`mock-auth.js`)
+- Route'y publiczne: bez mocka; testuj anty-enumerację, rate limit (**429**)
+- Route'y wołające `requireAuth()` / `auth()` bezpośrednio: `setMockUserId(userId)` lub mock osobno
+- **`auth/[...nextauth]`** — bez testu integracyjnego (NextAuth); reszta auth przez dedykowane route'y
+
+### Mocki w integracji (nie DB)
+
+| Moduł | Kiedy |
+|-------|-------|
+| `@/lib/auth` | sesja (`mock-auth.js`) |
+| `@/lib/stripe` | checkout/portal/webhook (`mock-stripe.js`) |
+| `@/lib/email` | Resend (`mock-email.js`) |
+| `@vercel/blob` | download plików |
+| `@/lib/upload` | upload route (gdy nie testujesz samego uploadu) |
+| `@/lib/octoprint-url` | `fetchOctoPrint` w testach connection/test |
+
+## Helpery (`src/test-utils/`)
+
+- `create-test-context.js` — `createTestUser` (**hasło bcrypt**), customer, order, printer, spool, octoprint…
+- `mock-request.js` — `createJsonRequest`, `createNextRequest`, `parseJsonResponse`
+- `mock-auth.js` — `setMockUserId`, `clearMockUser`
+- `prisma-test.js` — `resetTestDb`
+
+Wzorzec:
+
+```js
+import { GET } from '@/app/api/filaments/route';
+import { resetTestDb } from '@/test-utils/prisma-test';
+import { createTestUser } from '@/test-utils/create-test-context';
+import { setMockUserId, clearMockUser } from '@/test-utils/mock-auth';
+
+beforeEach(async () => {
+  await resetTestDb();
+  clearMockUser();
+});
+```
+
+## Smoke migracji
+
+Przed merge'em zmian w `prisma/`:
+
+```bash
+pnpm docker:reset
+# lub: pnpm docker:up && pnpm check:db
+```
+
+CI: job `migrations-smoke` na PR ze zmianami w `prisma/`.
+
+## E2E (Playwright)
+
+- Pliki: `e2e/flows/*.spec.js`, helpers: `e2e/helpers/`
+- Config: `playwright.config.js`; seed użytkownika: `e2e/global-setup.js` (`e2e-premium@printlab.test`)
+- Selektory: **`data-testid`**, nigdy klasy CSS
+- Lokalnie: dev server + `pnpm test:e2e`; CI: `e2e-smoke` (nieblokujący)
+- Flow biznesowe rozbudowywać stopniowo (obecnie smoke: rejestracja, widoczność kluczowych ekranów)
+
+## Reguła
+
+Każda nowa funkcja = test:
+
+- Logika w `src/lib/` → unit (lub integracja lib jeśli DB)
+- Nowy endpoint → integracja (happy + walidacja + ownership)
+- Nowy flow UI → E2E gdy stabilny
+- Bug fix → najpierw test reprodukujący
+
+Po nowym route API: **`pnpm check:api-auth`**.
+
+## Unikaj
+
+- Mockowania Prisma w integracji
+- Snapshotów komponentów React
+- Unit testów dla pass-through CRUD
+- Selektorów CSS w E2E
+- Współdzielonego stanu między testami
+- TypeScript w plikach testowych
